@@ -1,0 +1,10 @@
+<resources>
+    <color name="bg_chat">#0E1621</color>
+    <color name="bg_app">#17212B</color>
+    <color name="bubble_self">#2B5278</color>
+    <color name="bubble_other">#182533</color>
+    <color name="accent">#4EA4F6</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#8A96A3</color>
+    <color name="reply_bar">#4EA4F6</color>
+</resources>

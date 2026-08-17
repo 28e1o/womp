@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">RP Chat</string>
+    <string name="add_character">Tambah Karakter</string>
+    <string name="character_name_hint">Nama karakter</string>
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+    <string name="type_message">Pesan</string>
+    <string name="no_chats">Belum ada karakter. Tekan + untuk membuat.</string>
+    <string name="reply_to">Membalas</string>
+    <string name="send_as_self">Kirim sebagai diriku</string>
+    <string name="send_as_other">Kirim sebagai karakter</string>
+    <string name="choose_avatar">Pilih avatar</string>
+</resources>
