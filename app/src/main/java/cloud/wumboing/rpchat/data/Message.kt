@@ -13,7 +13,9 @@ data class Message(
     var isSelf: Boolean,
     var timestamp: Long = System.currentTimeMillis(),
     var replyToId: String? = null,
-    var replyPreview: String? = null
+    var replyPreview: String? = null,
+    var reaction: String? = null,
+    var edited: Boolean = false
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -22,6 +24,8 @@ data class Message(
         put("timestamp", timestamp)
         put("replyToId", replyToId ?: JSONObject.NULL)
         put("replyPreview", replyPreview ?: JSONObject.NULL)
+        put("reaction", reaction ?: JSONObject.NULL)
+        put("edited", edited)
     }
 
     companion object {
@@ -31,7 +35,9 @@ data class Message(
             isSelf = o.getBoolean("isSelf"),
             timestamp = o.optLong("timestamp", System.currentTimeMillis()),
             replyToId = if (o.isNull("replyToId")) null else o.optString("replyToId"),
-            replyPreview = if (o.isNull("replyPreview")) null else o.optString("replyPreview")
+            replyPreview = if (o.isNull("replyPreview")) null else o.optString("replyPreview"),
+            reaction = if (!o.has("reaction") || o.isNull("reaction")) null else o.optString("reaction"),
+            edited = o.optBoolean("edited", false)
         )
     }
 }

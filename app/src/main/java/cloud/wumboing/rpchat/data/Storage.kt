@@ -12,8 +12,19 @@ import java.io.File
 class Storage(context: Context) {
 
     private val charactersFile = File(context.filesDir, "characters.json")
+    private val profileFile = File(context.filesDir, "profile.json")
     private val chatsDir = File(context.filesDir, "chats").apply { mkdirs() }
     val avatarsDir = File(context.filesDir, "avatars").apply { mkdirs() }
+
+    fun loadProfile(): UserProfile {
+        if (!profileFile.exists()) return UserProfile()
+        return UserProfile.fromJson(JSONObject(profileFile.readText()))
+    }
+
+    fun saveProfile(profile: UserProfile) {
+        profileFile.writeText(profile.toJson().toString())
+    }
+
 
     fun loadCharacters(): MutableList<Character> {
         if (!charactersFile.exists()) return mutableListOf()

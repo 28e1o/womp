@@ -1,13 +1,25 @@
 <resources>
     <string name="app_name">RP Chat</string>
-    <string name="add_character">Tambah Karakter</string>
+    <string name="add_character">Buat Kontak</string>
+    <string name="edit_character">Edit Kontak</string>
     <string name="character_name_hint">Nama karakter</string>
     <string name="save">Simpan</string>
     <string name="cancel">Batal</string>
     <string name="type_message">Pesan</string>
-    <string name="no_chats">Belum ada karakter. Tekan + untuk membuat.</string>
+    <string name="no_chats">Belum ada kontak. Tekan + untuk membuat.</string>
     <string name="reply_to">Membalas</string>
     <string name="send_as_self">Kirim sebagai diriku</string>
     <string name="send_as_other">Kirim sebagai karakter</string>
     <string name="choose_avatar">Pilih avatar</string>
+    <string name="new_chat">Obrolan Baru</string>
+    <string name="new_group">Grup baru</string>
+    <string name="new_group_soon">Fitur grup segera hadir</string>
+    <string name="new_contact">Kontak baru</string>
+    <string name="edit_profile">Profil Saya</string>
+    <string name="profile_name_hint">Nama kamu</string>
+    <string name="delete_message">Hapus</string>
+    <string name="edit_text">Edit teks</string>
+    <string name="give_reaction">Beri reaksi</string>
+    <string name="edited_label">diedit</string>
+    <string name="edit_message_hint">Ubah pesan</string>
 </resources>
