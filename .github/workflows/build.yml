@@ -31,7 +31,8 @@ jobs:
             -keystore app/release.keystore \
             -alias rpchat \
             -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass rpchatstore -keypass rpchatkey \
+            -storetype PKCS12 \
+            -storepass rpchatpass -keypass rpchatpass \
             -dname "CN=RP Chat, OU=RP Chat, O=wumboing, L=ID, S=ID, C=ID"
 
       - name: Build minified release APK

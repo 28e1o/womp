@@ -18,9 +18,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("release.keystore")
-            storePassword = "rpchatstore"
+            storePassword = "rpchatpass"
             keyAlias = "rpchat"
-            keyPassword = "rpchatkey"
+            keyPassword = "rpchatpass"
         }
     }
 
