@@ -13,9 +13,19 @@ class Storage(context: Context) {
 
     private val charactersFile = File(context.filesDir, "characters.json")
     private val profileFile = File(context.filesDir, "profile.json")
+    private val settingsFile = File(context.filesDir, "settings.json")
     private val chatsDir = File(context.filesDir, "chats").apply { mkdirs() }
     val avatarsDir = File(context.filesDir, "avatars").apply { mkdirs() }
     val mediaDir = File(context.filesDir, "media").apply { mkdirs() }
+
+    fun loadSettings(): AppSettings {
+        if (!settingsFile.exists()) return AppSettings()
+        return AppSettings.fromJson(JSONObject(settingsFile.readText()))
+    }
+
+    fun saveSettings(settings: AppSettings) {
+        settingsFile.writeText(settings.toJson().toString())
+    }
 
     fun loadProfile(): UserProfile {
         if (!profileFile.exists()) return UserProfile()

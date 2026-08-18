@@ -31,4 +31,17 @@
     <string name="attach_audio">Audio</string>
     <string name="remove_attachment">Hapus lampiran</string>
     <string name="emoji">Emoji</string>
+    <string name="settings">Pengaturan</string>
+    <string name="settings_profile_section">Profil</string>
+    <string name="settings_display_section">Tampilan Chat</string>
+    <string name="settings_font">Font</string>
+    <string name="settings_font_size">Ukuran font</string>
+    <string name="settings_chat_bg">Warna latar belakang chat</string>
+    <string name="settings_bubble_self">Warna bubble kamu</string>
+    <string name="settings_bubble_other">Warna bubble karakter</string>
+    <string name="font_default">Default</string>
+    <string name="font_serif">Serif</string>
+    <string name="font_monospace">Monospace</string>
+    <string name="font_condensed">Condensed</string>
+    <string name="new_chat_search_hint">Cari kontak</string>
 </resources>

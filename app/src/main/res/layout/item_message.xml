@@ -8,7 +8,9 @@
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
     android:paddingTop="4dp"
-    android:paddingBottom="4dp">
+    android:paddingBottom="8dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
     <LinearLayout
         android:id="@+id/contentRow"
@@ -18,6 +20,8 @@
         android:gravity="bottom"
         android:clickable="true"
         android:focusable="true"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:background="?attr/selectableItemBackground">
 
         <ImageView
@@ -33,7 +37,9 @@
         <FrameLayout
             android:id="@+id/bubbleFrame"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
             <LinearLayout
                 android:id="@+id/bubble"
@@ -81,7 +87,7 @@
                             android:id="@+id/txtReplyPreviewInBubble"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:maxLines="1"
+                            android:maxLines="2"
                             android:ellipsize="end"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
@@ -142,12 +148,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
+                android:layout_marginBottom="-4dp"
+                android:layout_marginEnd="-6dp"
                 android:background="@drawable/bg_reaction_badge"
                 android:paddingStart="5dp"
                 android:paddingEnd="5dp"
                 android:paddingTop="1dp"
                 android:paddingBottom="1dp"
                 android:textSize="13sp"
+                android:elevation="2dp"
                 android:visibility="gone" />
         </FrameLayout>
 

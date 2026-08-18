@@ -53,6 +53,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var storage: Storage
     private lateinit var adapter: MessageAdapter
     private lateinit var character: Character
+    private var appSettings: cloud.wumboing.rpchat.data.AppSettings = cloud.wumboing.rpchat.data.AppSettings()
 
     private var replyingTo: Message? = null
     private var replyingToName: String? = null
@@ -102,6 +103,8 @@ class ChatActivity : AppCompatActivity() {
             return
         }
         character = found
+        appSettings = storage.loadSettings()
+        applyChatBackground()
 
         binding.toolbar.setNavigationOnClickListener { finish() }
         binding.characterHeader.setOnClickListener { showEditCharacterDialog() }
@@ -111,6 +114,7 @@ class ChatActivity : AppCompatActivity() {
             items = storage.loadMessages(character.id),
             selfAvatarProvider = { storage.loadProfile().avatarPath },
             otherAvatarProvider = { character.avatarPath },
+            settingsProvider = { appSettings },
             onLongPress = { message, position -> showMessageOptions(message, position) },
             onMediaClick = { message -> openMediaExternally(message) }
         )
@@ -171,6 +175,18 @@ class ChatActivity : AppCompatActivity() {
             .setView(grid)
             .setPositiveButton(R.string.save, null)
             .show()
+    }
+
+    private fun applyChatBackground() {
+        binding.root.setBackgroundColor(appSettings.chatBackgroundColor)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!::adapter.isInitialized) return
+        appSettings = storage.loadSettings()
+        applyChatBackground()
+        adapter.refreshAvatars()
     }
 
     private fun updateToolbarHeader() {

@@ -26,6 +26,14 @@
             android:name=".ui.CropAvatarActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.NewChatActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

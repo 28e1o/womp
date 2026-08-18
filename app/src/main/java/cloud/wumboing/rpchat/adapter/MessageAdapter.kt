@@ -1,6 +1,7 @@
 package cloud.wumboing.rpchat.adapter
 
 import android.graphics.BitmapFactory
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -8,8 +9,10 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import cloud.wumboing.rpchat.R
+import cloud.wumboing.rpchat.data.AppSettings
 import cloud.wumboing.rpchat.data.Message
 import cloud.wumboing.rpchat.databinding.ItemMessageBinding
+import cloud.wumboing.rpchat.util.ThemeUtils
 import cloud.wumboing.rpchat.util.clipToCircle
 import java.io.File
 import java.text.SimpleDateFormat
@@ -20,6 +23,7 @@ class MessageAdapter(
     private val items: MutableList<Message>,
     private val selfAvatarProvider: () -> String?,
     private val otherAvatarProvider: () -> String?,
+    private val settingsProvider: () -> AppSettings,
     private val onLongPress: (Message, Int) -> Unit,
     private val onMediaClick: (Message) -> Unit
 ) : RecyclerView.Adapter<MessageAdapter.VH>() {
@@ -38,9 +42,12 @@ class MessageAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val message = items[position]
         val b = holder.binding
+        val settings = settingsProvider()
 
         b.txtMessage.text = message.text
         b.txtMessage.visibility = if (message.text.isEmpty()) View.GONE else View.VISIBLE
+        b.txtMessage.typeface = ThemeUtils.typefaceFor(settings.fontFamily)
+        b.txtMessage.setTextSize(TypedValue.COMPLEX_UNIT_SP, settings.fontSizeSp)
 
         val timeText = timeFormat.format(Date(message.timestamp))
         b.txtTime.text = if (message.edited) {
@@ -52,13 +59,13 @@ class MessageAdapter(
         val rowParams = b.contentRow.layoutParams as? android.widget.LinearLayout.LayoutParams
 
         if (message.isSelf) {
-            b.bubble.background = b.root.context.getDrawable(R.drawable.bg_bubble_self)
+            b.bubble.background = ThemeUtils.bubbleDrawable(b.root.context, settings.bubbleSelfColor)
             rowParams?.gravity = Gravity.END
             b.imgAvatarLeft.visibility = View.GONE
             b.imgAvatarRight.visibility = View.VISIBLE
             loadAvatar(b.imgAvatarRight, selfAvatarProvider())
         } else {
-            b.bubble.background = b.root.context.getDrawable(R.drawable.bg_bubble_other)
+            b.bubble.background = ThemeUtils.bubbleDrawable(b.root.context, settings.bubbleOtherColor)
             rowParams?.gravity = Gravity.START
             b.imgAvatarRight.visibility = View.GONE
             b.imgAvatarLeft.visibility = View.VISIBLE

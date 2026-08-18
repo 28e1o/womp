@@ -7,4 +7,5 @@
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#8A96A3</color>
     <color name="reply_bar">#4EA4F6</color>
+    <color name="divider">#26374A</color>
 </resources>

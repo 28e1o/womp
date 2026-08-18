@@ -3,16 +3,18 @@
 Aplikasi roleplay chat gaya Telegram — **native Kotlin Android**, bukan WebView/Capacitor.
 
 ## Fitur
-- Header atas = profil kamu sendiri (foto + nama), tap untuk edit (termasuk bio)
-- Tombol **+** → pilih **Grup baru** (segera hadir) atau **Kontak baru**, plus daftar kontak yang
-  sudah pernah dibuat (hapus obrolan tidak menghapus kontak, tinggal pilih lagi dari sini)
+- Header atas = profil kamu sendiri (foto + nama). Ikon **⚙️ pengaturan** di kanan header untuk
+  ubah foto/nama/bio kamu, font & ukuran font chat, warna latar chat, dan warna bubble
+- Tombol **+** membuka layar penuh "Obrolan Baru" (bukan popup) — bisa cari kontak, buat kontak
+  baru, atau pilih kontak yang sudah pernah dibuat (hapus obrolan tidak menghapus kontak)
 - Avatar tampil **bulat sempurna** (bukan kotak), ada area geser + cubit-zoom saat upload foto
-- Bio karakter tampil di bawah nama saat buka chat, dengan font berbeda (italic)
+- Bio karakter tampil di bawah nama saat buka chat, font normal (bukan italic)
 - Bubble menampilkan avatar pengirim (kamu di kanan, karakter di kiri)
-- **Reply**: geser bubble mana pun; nama pengirim asli ikut tampil di kutipan reply
-- Tekan-tahan bubble → Hapus / Edit teks / Beri reaksi emoji
+- **Reply**: geser bubble mana pun; nama pengirim asli + isi pesan (2 baris) ikut tampil di kutipan
+- Tekan-tahan bubble → Hapus / Edit teks / Beri reaksi emoji (badge reaksi tidak lagi menutup jam)
 - Input bar: emoji tetap di kiri, tombol lampiran (foto/video/audio) di kanan berubah jadi
   ikon kirim **←** **→** saat mulai mengetik atau ada lampiran
+- Garis pembatas tipis di bawah setiap header supaya tidak menyatu dengan konten di bawahnya
 - Data disimpan lokal (JSON file di internal storage) — tanpa Room/Gson supaya APK kecil
 - Build APK di-**minify** (R8 + shrinkResources) lewat GitHub Actions
 
