@@ -14,9 +14,28 @@ class Storage(context: Context) {
     private val charactersFile = File(context.filesDir, "characters.json")
     private val profileFile = File(context.filesDir, "profile.json")
     private val settingsFile = File(context.filesDir, "settings.json")
+    private val sessionsFile = File(context.filesDir, "sessions.json")
     private val chatsDir = File(context.filesDir, "chats").apply { mkdirs() }
     val avatarsDir = File(context.filesDir, "avatars").apply { mkdirs() }
     val mediaDir = File(context.filesDir, "media").apply { mkdirs() }
+
+    fun loadSessions(): MutableList<ChatSession> {
+        if (!sessionsFile.exists()) return mutableListOf()
+        val arr = JSONArray(sessionsFile.readText())
+        val list = mutableListOf<ChatSession>()
+        for (i in 0 until arr.length()) {
+            list.add(ChatSession.fromJson(arr.getJSONObject(i)))
+        }
+        return list
+    }
+
+    fun addSession(session: ChatSession) {
+        val list = loadSessions()
+        list.add(session)
+        val arr = JSONArray()
+        list.forEach { arr.put(it.toJson()) }
+        sessionsFile.writeText(arr.toString())
+    }
 
     fun loadSettings(): AppSettings {
         if (!settingsFile.exists()) return AppSettings()
@@ -116,7 +135,27 @@ class Storage(context: Context) {
             "photo" -> "📷 Foto"
             "video" -> "🎬 Video"
             "audio" -> "🎵 Audio"
+            "document" -> "📄 Dokumen"
             else -> last.text
         }
+    }
+
+    /** Semua pesan dari semua karakter (termasuk yang sudah disembunyikan dari daftar chat). */
+    fun allMessagesWithCharacterId(): List<Pair<String, Message>> {
+        val result = mutableListOf<Pair<String, Message>>()
+        chatsDir.listFiles()?.forEach { file ->
+            if (file.name.endsWith(".json")) {
+                val characterId = file.name.removeSuffix(".json")
+                try {
+                    val arr = JSONArray(file.readText())
+                    for (i in 0 until arr.length()) {
+                        result.add(characterId to Message.fromJson(arr.getJSONObject(i)))
+                    }
+                } catch (e: Exception) {
+                    // abaikan file rusak
+                }
+            }
+        }
+        return result
     }
 }

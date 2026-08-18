@@ -9,11 +9,14 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import cloud.wumboing.rpchat.R
 import cloud.wumboing.rpchat.data.AppSettings
@@ -76,7 +79,9 @@ class SettingsActivity : AppCompatActivity() {
         setupProfileSection()
         setupFontButtons()
         setupFontSizeSeek()
-        setupColorRows()
+        refreshChatBgRow()
+        refreshBubbleSelfRow()
+        refreshBubbleOtherRow()
     }
 
     // ---------- Profil ----------
@@ -135,43 +140,39 @@ class SettingsActivity : AppCompatActivity() {
     // ---------- Font ----------
 
     private fun setupFontButtons() {
-        val options = listOf(
-            "default" to getString(R.string.font_default),
-            "serif" to getString(R.string.font_serif),
-            "monospace" to getString(R.string.font_monospace),
-            "condensed" to getString(R.string.font_condensed)
-        )
-        refreshFontButtons(options)
+        refreshFontButtons()
     }
 
-    private fun refreshFontButtons(options: List<Pair<String, String>>) {
+    private fun refreshFontButtons() {
         binding.fontButtonsRow.removeAllViews()
-        options.forEach { (key, label) ->
+        ThemeUtils.FONT_OPTIONS.forEach { (key, label) ->
             val btn = Button(this).apply {
                 text = label
                 isAllCaps = false
                 textSize = 13f
                 typeface = ThemeUtils.typefaceFor(key)
-                setTextColor(if (settings.fontFamily == key) Color.WHITE else resources.getColor(R.color.text_secondary, theme))
+                setTextColor(if (settings.fontFamily == key) Color.WHITE else getColorCompat(R.color.text_secondary))
                 background = ThemeUtils.bubbleDrawable(
                     this@SettingsActivity,
-                    if (settings.fontFamily == key) resources.getColor(R.color.accent, theme) else resources.getColor(R.color.bubble_other, theme),
+                    if (settings.fontFamily == key) getColorCompat(R.color.accent) else getColorCompat(R.color.bubble_other),
                     20f
                 )
-                val params = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                params.marginEnd = 8
+                val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                params.marginEnd = 12
                 layoutParams = params
-                setPadding(8, 20, 8, 20)
+                setPadding(28, 20, 28, 20)
                 setOnClickListener {
                     settings.fontFamily = key
                     storage.saveSettings(settings)
-                    refreshFontButtons(options)
+                    refreshFontButtons()
                     updateFontSizePreview()
                 }
             }
             binding.fontButtonsRow.addView(btn)
         }
     }
+
+    private fun getColorCompat(resId: Int): Int = resources.getColor(resId, theme)
 
     // ---------- Font size ----------
 
@@ -196,59 +197,166 @@ class SettingsActivity : AppCompatActivity() {
         binding.txtFontSizePreview.text = "Aa — ${settings.fontSizeSp.toInt()}sp"
     }
 
-    // ---------- Warna ----------
+    // ---------- Warna (preset + custom HSV) ----------
 
-    private fun setupColorRows() {
-        renderSwatchRow(binding.chatBgRow, bgColors, settings.chatBackgroundColor) { color ->
-            settings.chatBackgroundColor = color
-            storage.saveSettings(settings)
-            renderSwatchRow(binding.chatBgRow, bgColors, settings.chatBackgroundColor) { }
-        }
-        renderSwatchRow(binding.bubbleSelfRow, bubbleColors, settings.bubbleSelfColor) { color ->
-            settings.bubbleSelfColor = color
-            storage.saveSettings(settings)
-            renderSwatchRow(binding.bubbleSelfRow, bubbleColors, settings.bubbleSelfColor) { }
-        }
-        renderSwatchRow(binding.bubbleOtherRow, bubbleColors, settings.bubbleOtherColor) { color ->
-            settings.bubbleOtherColor = color
-            storage.saveSettings(settings)
-            renderSwatchRow(binding.bubbleOtherRow, bubbleColors, settings.bubbleOtherColor) { }
-        }
+    private fun refreshChatBgRow() {
+        renderSwatchRow(
+            row = binding.chatBgRow,
+            colors = bgColors,
+            selected = settings.chatBackgroundColor,
+            onPick = { color ->
+                settings.chatBackgroundColor = color
+                storage.saveSettings(settings)
+                refreshChatBgRow()
+            },
+            onCustomPick = {
+                showCustomColorPicker(settings.chatBackgroundColor) { color ->
+                    settings.chatBackgroundColor = color
+                    storage.saveSettings(settings)
+                    refreshChatBgRow()
+                }
+            }
+        )
+    }
+
+    private fun refreshBubbleSelfRow() {
+        renderSwatchRow(
+            row = binding.bubbleSelfRow,
+            colors = bubbleColors,
+            selected = settings.bubbleSelfColor,
+            onPick = { color ->
+                settings.bubbleSelfColor = color
+                storage.saveSettings(settings)
+                refreshBubbleSelfRow()
+            },
+            onCustomPick = {
+                showCustomColorPicker(settings.bubbleSelfColor) { color ->
+                    settings.bubbleSelfColor = color
+                    storage.saveSettings(settings)
+                    refreshBubbleSelfRow()
+                }
+            }
+        )
+    }
+
+    private fun refreshBubbleOtherRow() {
+        renderSwatchRow(
+            row = binding.bubbleOtherRow,
+            colors = bubbleColors,
+            selected = settings.bubbleOtherColor,
+            onPick = { color ->
+                settings.bubbleOtherColor = color
+                storage.saveSettings(settings)
+                refreshBubbleOtherRow()
+            },
+            onCustomPick = {
+                showCustomColorPicker(settings.bubbleOtherColor) { color ->
+                    settings.bubbleOtherColor = color
+                    storage.saveSettings(settings)
+                    refreshBubbleOtherRow()
+                }
+            }
+        )
     }
 
     private fun renderSwatchRow(
         row: LinearLayout,
         colors: List<Int>,
         selected: Int,
-        onPick: (Int) -> Unit
+        onPick: (Int) -> Unit,
+        onCustomPick: () -> Unit
     ) {
         row.removeAllViews()
-        val sizeDp = 34
         val scale = resources.displayMetrics.density
-        val sizePx = (sizeDp * scale).toInt()
+        val sizePx = (34 * scale).toInt()
+
         colors.forEach { color ->
             val swatch = View(this).apply {
-                val drawable = GradientDrawable().apply {
+                background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
                     setColor(color)
-                    if (color == selected) {
-                        setStroke((2 * scale).toInt(), Color.WHITE)
-                    }
+                    if (color == selected) setStroke((2 * scale).toInt(), Color.WHITE)
                 }
-                background = drawable
                 val params = LinearLayout.LayoutParams(sizePx, sizePx)
                 params.marginEnd = (8 * scale).toInt()
                 layoutParams = params
-                setOnClickListener {
-                    onPick(color)
-                    if (row === binding.chatBgRow) applyPreviewBackground()
-                }
+                setOnClickListener { onPick(color) }
             }
             row.addView(swatch)
         }
+
+        val customSwatch = TextView(this).apply {
+            text = "+"
+            gravity = Gravity.CENTER
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(getColorCompat(R.color.bubble_other))
+                setStroke((1.5f * scale).toInt(), Color.WHITE)
+            }
+            val params = LinearLayout.LayoutParams(sizePx, sizePx)
+            layoutParams = params
+            setOnClickListener { onCustomPick() }
+        }
+        row.addView(customSwatch)
     }
 
-    private fun applyPreviewBackground() {
-        // hanya menyimpan; efek warna langsung terlihat saat kembali ke layar chat
+    private fun showCustomColorPicker(initial: Int, onPick: (Int) -> Unit) {
+        val scale = resources.displayMetrics.density
+        val hsv = FloatArray(3)
+        Color.colorToHSV(initial, hsv)
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((24 * scale).toInt(), (16 * scale).toInt(), (24 * scale).toInt(), (8 * scale).toInt())
+        }
+
+        val preview = View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (56 * scale).toInt())
+            background = GradientDrawable().apply {
+                setColor(Color.HSVToColor(hsv))
+                cornerRadius = 12f * scale
+            }
+        }
+        container.addView(preview)
+
+        fun updatePreview() {
+            (preview.background as GradientDrawable).setColor(Color.HSVToColor(hsv))
+        }
+
+        fun addSlider(label: String, max: Int, progress: Int, onChange: (Int) -> Unit) {
+            val tv = TextView(this).apply {
+                text = label
+                setTextColor(getColorCompat(R.color.text_secondary))
+                textSize = 13f
+                setPadding(0, (12 * scale).toInt(), 0, 0)
+            }
+            container.addView(tv)
+            val seek = SeekBar(this).apply {
+                this.max = max
+                this.progress = progress
+                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(seekBar: SeekBar?, p: Int, fromUser: Boolean) {
+                        onChange(p)
+                        updatePreview()
+                    }
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+                })
+            }
+            container.addView(seek)
+        }
+
+        addSlider("Hue", 360, hsv[0].toInt()) { v -> hsv[0] = v.toFloat() }
+        addSlider("Saturasi", 100, (hsv[1] * 100).toInt()) { v -> hsv[1] = v / 100f }
+        addSlider("Kecerahan", 100, (hsv[2] * 100).toInt()) { v -> hsv[2] = v / 100f }
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.settings_custom_color)
+            .setView(container)
+            .setPositiveButton(R.string.save) { _, _ -> onPick(Color.HSVToColor(hsv)) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 }

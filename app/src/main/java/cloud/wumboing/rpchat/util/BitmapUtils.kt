@@ -7,6 +7,18 @@ import android.net.Uri
 
 object BitmapUtils {
 
+    fun decodeSampledFromFile(path: String, reqSize: Int = 1600): Bitmap? {
+        return try {
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, options)
+            options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, reqSize)
+            options.inJustDecodeBounds = false
+            BitmapFactory.decodeFile(path, options)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun decodeSampledFromUri(context: Context, uri: Uri, reqSize: Int = 1024): Bitmap? {
         return try {
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }

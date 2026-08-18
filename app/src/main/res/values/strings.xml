@@ -29,6 +29,7 @@
     <string name="attach_photo">Foto</string>
     <string name="attach_video">Video</string>
     <string name="attach_audio">Audio</string>
+    <string name="attach_document">Dokumen</string>
     <string name="remove_attachment">Hapus lampiran</string>
     <string name="emoji">Emoji</string>
     <string name="settings">Pengaturan</string>
@@ -44,4 +45,16 @@
     <string name="font_monospace">Monospace</string>
     <string name="font_condensed">Condensed</string>
     <string name="new_chat_search_hint">Cari kontak</string>
+    <string name="settings_custom_color">Pilih warna kustom</string>
+    <string name="tab_chat">Chat</string>
+    <string name="tab_stats">Statistik</string>
+    <string name="stats_range_day">1 Hari</string>
+    <string name="stats_range_week">7 Hari</string>
+    <string name="stats_range_month">1 Bulan</string>
+    <string name="stats_range_all">Semua</string>
+    <string name="stats_total_time">Total waktu chat</string>
+    <string name="stats_total_words">Total kata diketik</string>
+    <string name="stats_longest_contact">Kontak paling lama diajak chat</string>
+    <string name="stats_per_contact">Waktu per kontak</string>
+    <string name="stats_no_data">Belum ada data statistik</string>
 </resources>

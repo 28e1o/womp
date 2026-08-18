@@ -102,10 +102,14 @@ class MessageAdapter(
                         }
                     }
                 }
-                "video", "audio" -> {
+                "video", "audio", "document" -> {
                     b.mediaFileRow.visibility = View.VISIBLE
                     b.imgMediaIcon.setImageResource(
-                        if (message.mediaType == "video") R.drawable.ic_video else R.drawable.ic_audio
+                        when (message.mediaType) {
+                            "video" -> R.drawable.ic_video
+                            "audio" -> R.drawable.ic_audio
+                            else -> R.drawable.ic_document
+                        }
                     )
                     b.txtMediaName.text = File(message.mediaPath!!).name
                 }

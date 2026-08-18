@@ -54,6 +54,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var adapter: MessageAdapter
     private lateinit var character: Character
     private var appSettings: cloud.wumboing.rpchat.data.AppSettings = cloud.wumboing.rpchat.data.AppSettings()
+    private var sessionStartTime: Long = 0L
 
     private var replyingTo: Message? = null
     private var replyingToName: String? = null
@@ -116,7 +117,7 @@ class ChatActivity : AppCompatActivity() {
             otherAvatarProvider = { character.avatarPath },
             settingsProvider = { appSettings },
             onLongPress = { message, position -> showMessageOptions(message, position) },
-            onMediaClick = { message -> openMediaExternally(message) }
+            onMediaClick = { message -> openMedia(message) }
         )
         binding.recyclerMessages.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
@@ -187,6 +188,17 @@ class ChatActivity : AppCompatActivity() {
         appSettings = storage.loadSettings()
         applyChatBackground()
         adapter.refreshAvatars()
+        sessionStartTime = System.currentTimeMillis()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (!::character.isInitialized || sessionStartTime == 0L) return
+        val durationSeconds = (System.currentTimeMillis() - sessionStartTime) / 1000
+        if (durationSeconds > 0) {
+            storage.addSession(cloud.wumboing.rpchat.data.ChatSession(character.id, sessionStartTime, durationSeconds))
+        }
+        sessionStartTime = 0L
     }
 
     private fun updateToolbarHeader() {
@@ -264,13 +276,14 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    // ---------- Attachment (photo/video/audio) ----------
+    // ---------- Attachment (photo/video/audio/dokumen) ----------
 
     private fun showAttachOptions() {
         val options = arrayOf(
             getString(R.string.attach_photo),
             getString(R.string.attach_video),
-            getString(R.string.attach_audio)
+            getString(R.string.attach_audio),
+            getString(R.string.attach_document)
         )
         AlertDialog.Builder(this)
             .setItems(options) { _, which ->
@@ -278,6 +291,7 @@ class ChatActivity : AppCompatActivity() {
                     0 -> { pendingMediaType = "photo"; pickMediaLauncher.launch("image/*") }
                     1 -> { pendingMediaType = "video"; pickMediaLauncher.launch("video/*") }
                     2 -> { pendingMediaType = "audio"; pickMediaLauncher.launch("audio/*") }
+                    3 -> { pendingMediaType = "document"; pickMediaLauncher.launch("*/*") }
                 }
             }
             .show()
@@ -302,7 +316,8 @@ class ChatActivity : AppCompatActivity() {
             when (type) {
                 "photo" -> R.drawable.ic_photo
                 "video" -> R.drawable.ic_video
-                else -> R.drawable.ic_audio
+                "audio" -> R.drawable.ic_audio
+                else -> R.drawable.ic_document
             }
         )
         updateSendIconsVisibility()
@@ -324,6 +339,22 @@ class ChatActivity : AppCompatActivity() {
         pendingMedia = null
         binding.attachBar.visibility = View.GONE
         updateSendIconsVisibility()
+    }
+
+    private fun openMedia(message: Message) {
+        val path = message.mediaPath ?: return
+        if (!File(path).exists()) return
+        when (message.mediaType) {
+            "photo", "video", "audio" -> {
+                val intent = Intent(this, MediaViewerActivity::class.java).apply {
+                    putExtra(MediaViewerActivity.EXTRA_PATH, path)
+                    putExtra(MediaViewerActivity.EXTRA_TYPE, message.mediaType)
+                    putExtra(MediaViewerActivity.EXTRA_NAME, File(path).name)
+                }
+                startActivity(intent)
+            }
+            else -> openMediaExternally(message)
+        }
     }
 
     private fun openMediaExternally(message: Message) {
@@ -451,6 +482,7 @@ class ChatActivity : AppCompatActivity() {
             "photo" -> "📷 Foto"
             "video" -> "🎬 Video"
             "audio" -> "🎵 Audio"
+            "document" -> "📄 Dokumen"
             else -> ""
         }
     }
