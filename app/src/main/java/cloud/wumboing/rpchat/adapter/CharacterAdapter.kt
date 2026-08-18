@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import cloud.wumboing.rpchat.data.Character
 import cloud.wumboing.rpchat.databinding.ItemCharacterBinding
+import cloud.wumboing.rpchat.util.clipToCircle
 import java.io.File
 
 class CharacterAdapter(
@@ -19,14 +20,16 @@ class CharacterAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val binding = ItemCharacterBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        binding.imgAvatar.clipToCircle()
         return VH(binding)
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val character = items[position]
         holder.binding.txtName.text = character.name
-        holder.binding.txtPreview.text = previewProvider(character.id) ?: ""
+        holder.binding.txtPreview.text = previewProvider(character.id) ?: character.bio ?: ""
 
+        holder.binding.imgAvatar.setImageResource(cloud.wumboing.rpchat.R.drawable.avatar_placeholder)
         character.avatarPath?.let { path ->
             val file = File(path)
             if (file.exists()) {

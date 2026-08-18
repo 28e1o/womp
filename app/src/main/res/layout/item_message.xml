@@ -60,18 +60,64 @@
                     <View
                         android:layout_width="2dp"
                         android:layout_height="match_parent"
-                        android:minHeight="24dp"
+                        android:minHeight="30dp"
                         android:background="@color/accent" />
 
-                    <TextView
-                        android:id="@+id/txtReplyPreviewInBubble"
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/txtReplyNameInBubble"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/accent"
+                            android:textStyle="bold"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/txtReplyPreviewInBubble"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/imgMessagePhoto"
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
+                    android:layout_marginBottom="4dp"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/mediaFileRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingBottom="4dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/imgMediaIcon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_video" />
+
+                    <TextView
+                        android:id="@+id/txtMediaName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
                 </LinearLayout>
 
                 <TextView

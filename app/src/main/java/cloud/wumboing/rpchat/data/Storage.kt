@@ -15,6 +15,7 @@ class Storage(context: Context) {
     private val profileFile = File(context.filesDir, "profile.json")
     private val chatsDir = File(context.filesDir, "chats").apply { mkdirs() }
     val avatarsDir = File(context.filesDir, "avatars").apply { mkdirs() }
+    val mediaDir = File(context.filesDir, "media").apply { mkdirs() }
 
     fun loadProfile(): UserProfile {
         if (!profileFile.exists()) return UserProfile()
@@ -25,7 +26,7 @@ class Storage(context: Context) {
         profileFile.writeText(profile.toJson().toString())
     }
 
-
+    /** Semua kontak yang pernah dibuat (termasuk yang disembunyikan dari daftar chat). */
     fun loadCharacters(): MutableList<Character> {
         if (!charactersFile.exists()) return mutableListOf()
         val arr = JSONArray(charactersFile.readText())
@@ -35,6 +36,9 @@ class Storage(context: Context) {
         }
         return list
     }
+
+    /** Hanya kontak yang sedang tampil di daftar chat utama. */
+    fun visibleCharacters(): List<Character> = loadCharacters().filter { it.visible }
 
     fun saveCharacters(list: List<Character>) {
         val arr = JSONArray()
@@ -57,10 +61,23 @@ class Storage(context: Context) {
         }
     }
 
-    fun deleteCharacter(characterId: String) {
-        val list = loadCharacters().filterNot { it.id == characterId }
-        saveCharacters(list)
-        chatFile(characterId).delete()
+    /** Sembunyikan dari daftar chat utama, tapi kontak & riwayat chat tetap ada. */
+    fun hideFromChatList(characterId: String) {
+        val list = loadCharacters()
+        val idx = list.indexOfFirst { it.id == characterId }
+        if (idx >= 0) {
+            list[idx].visible = false
+            saveCharacters(list)
+        }
+    }
+
+    fun unhide(characterId: String) {
+        val list = loadCharacters()
+        val idx = list.indexOfFirst { it.id == characterId }
+        if (idx >= 0) {
+            list[idx].visible = true
+            saveCharacters(list)
+        }
     }
 
     private fun chatFile(characterId: String) = File(chatsDir, "$characterId.json")
@@ -84,6 +101,12 @@ class Storage(context: Context) {
 
     fun lastMessagePreview(characterId: String): String? {
         val messages = loadMessages(characterId)
-        return messages.lastOrNull()?.text
+        val last = messages.lastOrNull() ?: return null
+        return when (last.mediaType) {
+            "photo" -> "📷 Foto"
+            "video" -> "🎬 Video"
+            "audio" -> "🎵 Audio"
+            else -> last.text
+        }
     }
 }

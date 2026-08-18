@@ -36,14 +36,31 @@
                 android:scaleType="centerCrop"
                 android:background="@drawable/bg_avatar_circle" />
 
-            <TextView
-                android:id="@+id/txtToolbarName"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:textStyle="bold" />
+                android:orientation="vertical"
+                android:layout_marginStart="10dp">
+
+                <TextView
+                    android:id="@+id/txtToolbarName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtToolbarBio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="italic"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:visibility="gone" />
+            </LinearLayout>
         </LinearLayout>
     </androidx.appcompat.widget.Toolbar>
 
@@ -71,7 +88,7 @@
         android:paddingTop="6dp"
         android:paddingBottom="6dp"
         android:gravity="center_vertical"
-        app:layout_constraintBottom_toTopOf="@id/inputBar"
+        app:layout_constraintBottom_toTopOf="@id/attachBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -92,7 +109,6 @@
                 android:id="@+id/txtReplyLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/reply_to"
                 android:textColor="@color/accent"
                 android:textStyle="bold"
                 android:textSize="13sp" />
@@ -117,6 +133,49 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/attachBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:background="@color/bg_app"
+        android:paddingStart="12dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:gravity="center_vertical"
+        app:layout_constraintBottom_toTopOf="@id/inputBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/imgAttachPreviewIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_photo"
+            app:tint="@color/accent" />
+
+        <TextView
+            android:id="@+id/txtAttachPreviewName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <ImageButton
+            android:id="@+id/btnCancelAttach"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_close"
+            app:tint="@color/text_secondary" />
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/inputBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -132,13 +191,13 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageButton
-            android:id="@+id/btnSendAsOther"
+            android:id="@+id/btnEmoji"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="@drawable/bg_avatar_circle"
-            android:backgroundTint="@color/bubble_other"
-            android:contentDescription="@string/send_as_other"
-            android:src="@drawable/ic_arrow_left" />
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/emoji"
+            android:src="@drawable/ic_emoji"
+            app:tint="@color/text_secondary" />
 
         <EditText
             android:id="@+id/editMessage"
@@ -158,14 +217,46 @@
             android:maxLines="5"
             android:inputType="textCapSentences|textMultiLine" />
 
-        <ImageButton
-            android:id="@+id/btnSendAsSelf"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="@drawable/bg_avatar_circle"
-            android:backgroundTint="@color/accent"
-            android:contentDescription="@string/send_as_self"
-            android:src="@drawable/ic_arrow_right" />
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageButton
+                android:id="@+id/btnAttach"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_avatar_circle"
+                android:backgroundTint="@color/bubble_other"
+                android:contentDescription="@string/attach_photo"
+                android:src="@drawable/ic_attach" />
+
+            <LinearLayout
+                android:id="@+id/sendIconsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageButton
+                    android:id="@+id/btnSendAsOther"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_avatar_circle"
+                    android:backgroundTint="@color/bubble_other"
+                    android:contentDescription="@string/send_as_other"
+                    android:src="@drawable/ic_arrow_left" />
+
+                <ImageButton
+                    android:id="@+id/btnSendAsSelf"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_avatar_circle"
+                    android:backgroundTint="@color/accent"
+                    android:contentDescription="@string/send_as_self"
+                    android:src="@drawable/ic_arrow_right" />
+            </LinearLayout>
+        </FrameLayout>
 
     </LinearLayout>
 
