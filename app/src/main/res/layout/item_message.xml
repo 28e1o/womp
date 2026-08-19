@@ -112,13 +112,30 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <ImageView
-                    android:id="@+id/imgMessagePhoto"
+                <FrameLayout
+                    android:id="@+id/photoFrame"
                     android:layout_width="220dp"
                     android:layout_height="220dp"
                     android:layout_marginBottom="4dp"
-                    android:scaleType="centerCrop"
-                    android:visibility="gone" />
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/imgMessagePhoto"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop" />
+
+                    <ImageView
+                        android:id="@+id/imgPlayOverlay"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_avatar_circle"
+                        android:backgroundTint="#88000000"
+                        android:padding="12dp"
+                        android:src="@drawable/ic_play"
+                        android:visibility="gone" />
+                </FrameLayout>
 
                 <LinearLayout
                     android:id="@+id/mediaFileRow"

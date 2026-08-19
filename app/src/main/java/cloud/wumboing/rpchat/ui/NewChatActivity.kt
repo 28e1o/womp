@@ -94,6 +94,7 @@ class NewChatActivity : AppCompatActivity() {
         binding.recyclerAllContacts.adapter = CharacterAdapter(
             items = filtered.toMutableList(),
             previewProvider = { id -> storage.lastMessagePreview(id) },
+            timeProvider = { id -> storage.lastMessageTimestamp(id) },
             onClick = { character -> openCharacterChat(character) },
             onLongClick = { }
         )

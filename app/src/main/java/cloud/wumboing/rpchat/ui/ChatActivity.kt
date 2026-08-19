@@ -30,6 +30,7 @@ import cloud.wumboing.rpchat.databinding.ActivityChatBinding
 import cloud.wumboing.rpchat.databinding.DialogAddCharacterBinding
 import cloud.wumboing.rpchat.util.BitmapUtils
 import cloud.wumboing.rpchat.util.clipToCircle
+import cloud.wumboing.rpchat.util.loadAvatarOrInitials
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -114,7 +115,10 @@ class ChatActivity : AppCompatActivity() {
         adapter = MessageAdapter(
             items = storage.loadMessages(character.id),
             selfAvatarProvider = { storage.loadProfile().avatarPath },
+            selfNameProvider = { storage.loadProfile().name },
             otherAvatarProvider = { character.avatarPath },
+            otherNameProvider = { character.name },
+            otherSeed = character.id,
             settingsProvider = { appSettings },
             pinnedIdProvider = { character.pinnedMessageId },
             onLongPress = { message, position -> showMessageOptions(message, position) },
@@ -138,6 +142,12 @@ class ChatActivity : AppCompatActivity() {
         binding.btnEmoji.setOnClickListener { showEmojiPicker { emoji -> insertEmoji(emoji) } }
         binding.btnUnpin.setOnClickListener { unpinMessage() }
         binding.pinnedBar.setOnClickListener { scrollToPinnedMessage() }
+        binding.btnMoreOptions.setOnClickListener {
+            val intent = Intent(this, CharacterProfileActivity::class.java)
+            intent.putExtra(CharacterProfileActivity.EXTRA_CHARACTER_ID, character.id)
+            startActivity(intent)
+        }
+        // btnCall sengaja tidak diberi aksi (belum berfungsi)
 
         binding.editMessage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -233,14 +243,7 @@ class ChatActivity : AppCompatActivity() {
         } else {
             binding.txtToolbarBio.visibility = View.GONE
         }
-        binding.imgToolbarAvatar.setImageResource(R.drawable.avatar_placeholder)
-        character.avatarPath?.let { path ->
-            val f = File(path)
-            if (f.exists()) {
-                val bmp = BitmapFactory.decodeFile(path)
-                if (bmp != null) binding.imgToolbarAvatar.setImageBitmap(bmp)
-            }
-        }
+        binding.imgToolbarAvatar.loadAvatarOrInitials(character.avatarPath, character.name, character.id)
     }
 
     private fun launchCrop(uri: Uri) {

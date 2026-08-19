@@ -18,6 +18,7 @@ class Storage(context: Context) {
     private val chatsDir = File(context.filesDir, "chats").apply { mkdirs() }
     val avatarsDir = File(context.filesDir, "avatars").apply { mkdirs() }
     val mediaDir = File(context.filesDir, "media").apply { mkdirs() }
+    val statusDir = File(context.filesDir, "status").apply { mkdirs() }
 
     fun loadSessions(): MutableList<ChatSession> {
         if (!sessionsFile.exists()) return mutableListOf()
@@ -138,6 +139,10 @@ class Storage(context: Context) {
             "document" -> "📄 Dokumen"
             else -> last.text
         }
+    }
+
+    fun lastMessageTimestamp(characterId: String): Long? {
+        return loadMessages(characterId).lastOrNull()?.timestamp
     }
 
     /** Semua pesan dari semua karakter (termasuk yang sudah disembunyikan dari daftar chat). */

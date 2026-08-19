@@ -24,6 +24,7 @@ import cloud.wumboing.rpchat.data.Storage
 import cloud.wumboing.rpchat.databinding.ActivitySettingsBinding
 import cloud.wumboing.rpchat.util.ThemeUtils
 import cloud.wumboing.rpchat.util.clipToCircle
+import cloud.wumboing.rpchat.util.loadAvatarOrInitials
 import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
@@ -146,13 +147,7 @@ class SettingsActivity : AppCompatActivity() {
         val profile = storage.loadProfile()
         binding.editSettingsName.setText(profile.name)
         binding.editSettingsBio.setText(profile.bio ?: "")
-        profile.avatarPath?.let { path ->
-            val f = File(path)
-            if (f.exists()) {
-                val bmp = BitmapFactory.decodeFile(path)
-                if (bmp != null) binding.imgSettingsAvatar.setImageBitmap(bmp)
-            }
-        }
+        binding.imgSettingsAvatar.loadAvatarOrInitials(profile.avatarPath, profile.name, "self")
 
         binding.imgSettingsAvatar.setOnClickListener {
             pickAvatarLauncher.launch("image/*")

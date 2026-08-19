@@ -15,7 +15,7 @@ import cloud.wumboing.rpchat.data.Character
 import cloud.wumboing.rpchat.data.Storage
 import cloud.wumboing.rpchat.databinding.FragmentChatListBinding
 import cloud.wumboing.rpchat.util.clipToCircle
-import java.io.File
+import cloud.wumboing.rpchat.util.loadAvatarOrInitials
 
 class ChatListFragment : Fragment() {
 
@@ -46,6 +46,7 @@ class ChatListFragment : Fragment() {
         adapter = CharacterAdapter(
             items = storage.visibleCharacters().toMutableList(),
             previewProvider = { id -> storage.lastMessagePreview(id) },
+            timeProvider = { id -> storage.lastMessageTimestamp(id) },
             onClick = { character -> openChat(character) },
             onLongClick = { character -> confirmHide(character) }
         )
@@ -82,14 +83,7 @@ class ChatListFragment : Fragment() {
     private fun updateProfileHeader() {
         val profile = storage.loadProfile()
         binding.txtMyName.text = profile.name
-        binding.imgMyAvatar.setImageResource(R.drawable.avatar_placeholder)
-        profile.avatarPath?.let { path ->
-            val f = File(path)
-            if (f.exists()) {
-                val bmp = BitmapFactory.decodeFile(path)
-                if (bmp != null) binding.imgMyAvatar.setImageBitmap(bmp)
-            }
-        }
+        binding.imgMyAvatar.loadAvatarOrInitials(profile.avatarPath, profile.name, "self")
     }
 
     private fun openChat(character: Character) {

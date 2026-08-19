@@ -69,4 +69,15 @@
     <string name="import_success">Impor berhasil. Silakan buka ulang aplikasi.</string>
     <string name="import_failed">Gagal mengimpor data — pastikan file backup valid</string>
     <string name="settings_backup_section">Backup</string>
+    <string name="call">Telepon</string>
+    <string name="more_options">Opsi lain</string>
+    <string name="chat_button">Obrolan</string>
+    <string name="mute_button">Senyapkan</string>
+    <string name="video_button">Video</string>
+    <string name="username_hint">Username</string>
+    <string name="description_hint">Deskripsi</string>
+    <string name="add_status_photo">Tambah Foto Status</string>
+    <string name="change_avatar">Ubah Foto Profil</string>
+    <string name="delete_status_photo">Hapus Foto Ini</string>
+    <string name="character_profile">Profil Karakter</string>
 </resources>

@@ -1,17 +1,18 @@
 package cloud.wumboing.rpchat.adapter
 
-import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import cloud.wumboing.rpchat.data.Character
 import cloud.wumboing.rpchat.databinding.ItemCharacterBinding
+import cloud.wumboing.rpchat.util.ChatDateUtils
 import cloud.wumboing.rpchat.util.clipToCircle
-import java.io.File
+import cloud.wumboing.rpchat.util.loadAvatarOrInitials
 
 class CharacterAdapter(
     private val items: MutableList<Character>,
     private val previewProvider: (String) -> String?,
+    private val timeProvider: (String) -> Long?,
     private val onClick: (Character) -> Unit,
     private val onLongClick: (Character) -> Unit
 ) : RecyclerView.Adapter<CharacterAdapter.VH>() {
@@ -34,14 +35,10 @@ class CharacterAdapter(
             previewProvider(character.id) ?: character.bio ?: ""
         }
 
-        holder.binding.imgAvatar.setImageResource(cloud.wumboing.rpchat.R.drawable.avatar_placeholder)
-        character.avatarPath?.let { path ->
-            val file = File(path)
-            if (file.exists()) {
-                val bmp = BitmapFactory.decodeFile(path)
-                if (bmp != null) holder.binding.imgAvatar.setImageBitmap(bmp)
-            }
-        }
+        val timestamp = timeProvider(character.id)
+        holder.binding.txtTime.text = if (timestamp != null) ChatDateUtils.formatChatTime(timestamp) else ""
+
+        holder.binding.imgAvatar.loadAvatarOrInitials(character.avatarPath, character.name, character.id)
 
         holder.binding.root.setOnClickListener { onClick(character) }
         holder.binding.root.setOnLongClickListener {

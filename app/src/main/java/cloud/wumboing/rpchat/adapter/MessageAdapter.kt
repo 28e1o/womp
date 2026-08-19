@@ -6,14 +6,15 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import cloud.wumboing.rpchat.R
 import cloud.wumboing.rpchat.data.AppSettings
 import cloud.wumboing.rpchat.data.Message
 import cloud.wumboing.rpchat.databinding.ItemMessageBinding
+import cloud.wumboing.rpchat.util.BitmapUtils
 import cloud.wumboing.rpchat.util.ThemeUtils
 import cloud.wumboing.rpchat.util.clipToCircle
+import cloud.wumboing.rpchat.util.loadAvatarOrInitials
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -22,7 +23,10 @@ import java.util.Locale
 class MessageAdapter(
     private val items: MutableList<Message>,
     private val selfAvatarProvider: () -> String?,
+    private val selfNameProvider: () -> String,
     private val otherAvatarProvider: () -> String?,
+    private val otherNameProvider: () -> String,
+    private val otherSeed: String,
     private val settingsProvider: () -> AppSettings,
     private val pinnedIdProvider: () -> String?,
     private val onLongPress: (Message, Int) -> Unit,
@@ -81,13 +85,13 @@ class MessageAdapter(
             rowParams?.gravity = Gravity.END
             b.imgAvatarLeft.visibility = View.GONE
             b.imgAvatarRight.visibility = View.VISIBLE
-            loadAvatar(b.imgAvatarRight, selfAvatarProvider())
+            b.imgAvatarRight.loadAvatarOrInitials(selfAvatarProvider(), selfNameProvider(), "self")
         } else {
             b.bubble.background = ThemeUtils.bubbleDrawable(b.root.context, settings.bubbleOtherColor)
             rowParams?.gravity = Gravity.START
             b.imgAvatarRight.visibility = View.GONE
             b.imgAvatarLeft.visibility = View.VISIBLE
-            loadAvatar(b.imgAvatarLeft, otherAvatarProvider())
+            b.imgAvatarLeft.loadAvatarOrInitials(otherAvatarProvider(), otherNameProvider(), otherSeed)
         }
         b.contentRow.layoutParams = rowParams
 
@@ -106,28 +110,34 @@ class MessageAdapter(
             b.txtReaction.visibility = View.GONE
         }
 
-        b.imgMessagePhoto.visibility = View.GONE
+        b.photoFrame.visibility = View.GONE
+        b.imgPlayOverlay.visibility = View.GONE
         b.mediaFileRow.visibility = View.GONE
         if (!message.mediaPath.isNullOrEmpty()) {
             when (message.mediaType) {
                 "photo" -> {
-                    val f = File(message.mediaPath!!)
-                    if (f.exists()) {
-                        val bmp = BitmapFactory.decodeFile(message.mediaPath)
-                        if (bmp != null) {
-                            b.imgMessagePhoto.setImageBitmap(bmp)
-                            b.imgMessagePhoto.visibility = View.VISIBLE
-                        }
+                    val bmp = BitmapUtils.decodeSampledFromFile(message.mediaPath!!, 800)
+                    if (bmp != null) {
+                        b.imgMessagePhoto.setImageBitmap(bmp)
+                        b.photoFrame.visibility = View.VISIBLE
                     }
                 }
-                "video", "audio", "document" -> {
+                "video" -> {
+                    val thumb = BitmapUtils.videoThumbnail(message.mediaPath!!)
+                    if (thumb != null) {
+                        b.imgMessagePhoto.setImageBitmap(thumb)
+                        b.photoFrame.visibility = View.VISIBLE
+                        b.imgPlayOverlay.visibility = View.VISIBLE
+                    } else {
+                        b.mediaFileRow.visibility = View.VISIBLE
+                        b.imgMediaIcon.setImageResource(R.drawable.ic_video)
+                        b.txtMediaName.text = File(message.mediaPath!!).name
+                    }
+                }
+                "audio", "document" -> {
                     b.mediaFileRow.visibility = View.VISIBLE
                     b.imgMediaIcon.setImageResource(
-                        when (message.mediaType) {
-                            "video" -> R.drawable.ic_video
-                            "audio" -> R.drawable.ic_audio
-                            else -> R.drawable.ic_document
-                        }
+                        if (message.mediaType == "audio") R.drawable.ic_audio else R.drawable.ic_document
                     )
                     b.txtMediaName.text = File(message.mediaPath!!).name
                 }
@@ -141,17 +151,6 @@ class MessageAdapter(
         b.contentRow.setOnLongClickListener {
             onLongPress(message, holder.bindingAdapterPosition)
             true
-        }
-    }
-
-    private fun loadAvatar(iv: ImageView, path: String?) {
-        iv.setImageResource(R.drawable.avatar_placeholder)
-        if (!path.isNullOrEmpty()) {
-            val f = File(path)
-            if (f.exists()) {
-                val bmp = BitmapFactory.decodeFile(path)
-                if (bmp != null) iv.setImageBitmap(bmp)
-            }
         }
     }
 

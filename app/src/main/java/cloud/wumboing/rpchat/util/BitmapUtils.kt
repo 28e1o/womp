@@ -7,6 +7,18 @@ import android.net.Uri
 
 object BitmapUtils {
 
+    fun videoThumbnail(path: String): Bitmap? {
+        return try {
+            val retriever = android.media.MediaMetadataRetriever()
+            retriever.setDataSource(path)
+            val frame = retriever.getFrameAtTime(1_000_000)
+            retriever.release()
+            frame
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun decodeSampledFromFile(path: String, reqSize: Int = 1600): Bitmap? {
         return try {
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }

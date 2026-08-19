@@ -1,5 +1,6 @@
 package cloud.wumboing.rpchat.data
 
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
@@ -10,7 +11,9 @@ data class Character(
     var bio: String? = null,
     var visible: Boolean = true,
     var pinnedMessageId: String? = null,
-    var draftText: String? = null
+    var draftText: String? = null,
+    var username: String? = null,
+    var statusPhotos: MutableList<String> = mutableListOf()
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -20,17 +23,28 @@ data class Character(
         put("visible", visible)
         put("pinnedMessageId", pinnedMessageId ?: JSONObject.NULL)
         put("draftText", draftText ?: JSONObject.NULL)
+        put("username", username ?: JSONObject.NULL)
+        put("statusPhotos", JSONArray(statusPhotos))
     }
 
     companion object {
-        fun fromJson(o: JSONObject): Character = Character(
-            id = o.getString("id"),
-            name = o.getString("name"),
-            avatarPath = if (o.isNull("avatarPath")) null else o.optString("avatarPath"),
-            bio = if (!o.has("bio") || o.isNull("bio")) null else o.optString("bio"),
-            visible = o.optBoolean("visible", true),
-            pinnedMessageId = if (!o.has("pinnedMessageId") || o.isNull("pinnedMessageId")) null else o.optString("pinnedMessageId"),
-            draftText = if (!o.has("draftText") || o.isNull("draftText")) null else o.optString("draftText")
-        )
+        fun fromJson(o: JSONObject): Character {
+            val statusList = mutableListOf<String>()
+            if (o.has("statusPhotos") && !o.isNull("statusPhotos")) {
+                val arr = o.getJSONArray("statusPhotos")
+                for (i in 0 until arr.length()) statusList.add(arr.getString(i))
+            }
+            return Character(
+                id = o.getString("id"),
+                name = o.getString("name"),
+                avatarPath = if (o.isNull("avatarPath")) null else o.optString("avatarPath"),
+                bio = if (!o.has("bio") || o.isNull("bio")) null else o.optString("bio"),
+                visible = o.optBoolean("visible", true),
+                pinnedMessageId = if (!o.has("pinnedMessageId") || o.isNull("pinnedMessageId")) null else o.optString("pinnedMessageId"),
+                draftText = if (!o.has("draftText") || o.isNull("draftText")) null else o.optString("draftText"),
+                username = if (!o.has("username") || o.isNull("username")) null else o.optString("username"),
+                statusPhotos = statusList
+            )
+        }
     }
 }
