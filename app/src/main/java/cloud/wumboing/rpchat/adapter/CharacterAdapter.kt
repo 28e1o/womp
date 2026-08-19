@@ -27,7 +27,12 @@ class CharacterAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val character = items[position]
         holder.binding.txtName.text = character.name
-        holder.binding.txtPreview.text = previewProvider(character.id) ?: character.bio ?: ""
+        val draft = character.draftText
+        holder.binding.txtPreview.text = if (!draft.isNullOrEmpty()) {
+            "Draft: $draft"
+        } else {
+            previewProvider(character.id) ?: character.bio ?: ""
+        }
 
         holder.binding.imgAvatar.setImageResource(cloud.wumboing.rpchat.R.drawable.avatar_placeholder)
         character.avatarPath?.let { path ->

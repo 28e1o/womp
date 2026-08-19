@@ -8,7 +8,9 @@ data class Character(
     var name: String,
     var avatarPath: String? = null,
     var bio: String? = null,
-    var visible: Boolean = true
+    var visible: Boolean = true,
+    var pinnedMessageId: String? = null,
+    var draftText: String? = null
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -16,6 +18,8 @@ data class Character(
         put("avatarPath", avatarPath ?: JSONObject.NULL)
         put("bio", bio ?: JSONObject.NULL)
         put("visible", visible)
+        put("pinnedMessageId", pinnedMessageId ?: JSONObject.NULL)
+        put("draftText", draftText ?: JSONObject.NULL)
     }
 
     companion object {
@@ -24,7 +28,9 @@ data class Character(
             name = o.getString("name"),
             avatarPath = if (o.isNull("avatarPath")) null else o.optString("avatarPath"),
             bio = if (!o.has("bio") || o.isNull("bio")) null else o.optString("bio"),
-            visible = o.optBoolean("visible", true)
+            visible = o.optBoolean("visible", true),
+            pinnedMessageId = if (!o.has("pinnedMessageId") || o.isNull("pinnedMessageId")) null else o.optString("pinnedMessageId"),
+            draftText = if (!o.has("draftText") || o.isNull("draftText")) null else o.optString("draftText")
         )
     }
 }

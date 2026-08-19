@@ -57,4 +57,16 @@
     <string name="stats_longest_contact">Kontak paling lama diajak chat</string>
     <string name="stats_per_contact">Waktu per kontak</string>
     <string name="stats_no_data">Belum ada data statistik</string>
+    <string name="pin_message">Sematkan</string>
+    <string name="unpin_message">Lepas sematan</string>
+    <string name="send_as_narrator">Kirim sebagai narator</string>
+    <string name="export_data">Ekspor Data</string>
+    <string name="import_data">Impor Data</string>
+    <string name="export_success">Data berhasil diekspor</string>
+    <string name="export_failed">Gagal mengekspor data</string>
+    <string name="import_confirm_title">Impor data?</string>
+    <string name="import_confirm_message">Ini akan menimpa semua chat, kontak, dan pengaturan yang ada sekarang dengan isi file backup. Lanjutkan?</string>
+    <string name="import_success">Impor berhasil. Silakan buka ulang aplikasi.</string>
+    <string name="import_failed">Gagal mengimpor data — pastikan file backup valid</string>
+    <string name="settings_backup_section">Backup</string>
 </resources>

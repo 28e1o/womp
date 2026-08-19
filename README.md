@@ -15,6 +15,20 @@ Aplikasi roleplay chat gaya Telegram — **native Kotlin Android**, bukan WebVie
 - Input bar: emoji tetap di kiri, tombol lampiran (foto/video/audio) di kanan berubah jadi
   ikon kirim **←** **→** saat mulai mengetik atau ada lampiran
 - Garis pembatas tipis di bawah setiap header supaya tidak menyatu dengan konten di bawahnya
+- **Sematkan pesan**: tekan-tahan bubble atau teks narator → Sematkan. Hanya 1 pesan tersemat per
+  chat — sematkan yang baru otomatis menggantikan yang lama. Ada bar pesan tersemat di atas chat
+- **Draft otomatis**: teks yang belum terkirim tersimpan begitu keluar chat, dan tampil di daftar
+  chat sebagai "Draft: ..."
+- **Mode narator**: tombol di tengah ikon kirim (di antara ← dan →) untuk kirim teks narasi tanpa
+  bubble, rata tengah, gaya italic
+- **Import/Export data**: di Pengaturan, backup seluruh chat/kontak/foto/pengaturan ke satu file
+  .zip, dan bisa dipulihkan lagi (misalnya setelah install ulang aplikasi)
+- Foto/video/audio dibuka **di dalam aplikasi** (bukan app luar) — video & audio bisa diputar/dijeda
+- Bisa kirim dokumen (selain foto/video/audio) lewat tombol lampiran
+- Warna & font di Pengaturan sekarang bisa **digeser** (horizontal scroll), plus color picker
+  custom (Hue/Saturasi/Kecerahan) selain preset
+- Bottom navigation: tab **Chat** dan **Statistik** (total waktu chat per rentang 1 hari/7
+  hari/1 bulan/semua, kontak paling lama diajak chat, total kata diketik, grafik batang per kontak)
 - Data disimpan lokal (JSON file di internal storage) — tanpa Room/Gson supaya APK kecil
 - Build APK di-**minify** (R8 + shrinkResources) lewat GitHub Actions
 

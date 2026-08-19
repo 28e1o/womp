@@ -21,6 +21,7 @@
             android:id="@+id/characterHeader"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_gravity="start|center_vertical"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingEnd="12dp"
@@ -72,6 +73,60 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <LinearLayout
+        android:id="@+id/pinnedBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:background="@color/bg_app"
+        android:paddingStart="12dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintTop_toBottomOf="@id/headerDivider"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_pin"
+            app:tint="@color/accent" />
+
+        <TextView
+            android:id="@+id/txtPinnedPreview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <ImageButton
+            android:id="@+id/btnUnpin"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_close"
+            app:tint="@color/text_secondary" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/pinnedDivider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@color/divider"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/pinnedBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerMessages"
         android:layout_width="0dp"
@@ -79,7 +134,7 @@
         android:clipToPadding="false"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@id/headerDivider"
+        app:layout_constraintTop_toBottomOf="@id/pinnedDivider"
         app:layout_constraintBottom_toTopOf="@id/replyBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -255,10 +310,22 @@
                     android:src="@drawable/ic_arrow_left" />
 
                 <ImageButton
+                    android:id="@+id/btnSendAsNarrator"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/bg_avatar_circle"
+                    android:backgroundTint="@color/bg_chat"
+                    android:contentDescription="@string/send_as_narrator"
+                    android:src="@drawable/ic_narrator"
+                    android:padding="7dp" />
+
+                <ImageButton
                     android:id="@+id/btnSendAsSelf"
                     android:layout_width="44dp"
                     android:layout_height="44dp"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="4dp"
                     android:background="@drawable/bg_avatar_circle"
                     android:backgroundTint="@color/accent"
                     android:contentDescription="@string/send_as_self"

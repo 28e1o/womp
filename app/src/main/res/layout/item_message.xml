@@ -12,6 +12,24 @@
     android:clipChildren="false"
     android:clipToPadding="false">
 
+    <TextView
+        android:id="@+id/txtNarrator"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:textColor="@color/text_secondary"
+        android:textStyle="italic"
+        android:textSize="13sp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/contentRow"
         android:layout_width="wrap_content"

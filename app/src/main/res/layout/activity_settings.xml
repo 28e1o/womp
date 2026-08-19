@@ -139,15 +139,20 @@
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
-            <LinearLayout
-                android:id="@+id/fontButtonsRow"
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp" />
+                android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/fontButtonsRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp" />
+            </HorizontalScrollView>
 
             <TextView
                 android:layout_width="match_parent"
@@ -187,15 +192,20 @@
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
-            <LinearLayout
-                android:id="@+id/chatBgRow"
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp" />
+                android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/chatBgRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp" />
+            </HorizontalScrollView>
 
             <TextView
                 android:layout_width="match_parent"
@@ -207,15 +217,20 @@
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
-            <LinearLayout
-                android:id="@+id/bubbleSelfRow"
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp" />
+                android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/bubbleSelfRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp" />
+            </HorizontalScrollView>
 
             <TextView
                 android:layout_width="match_parent"
@@ -227,15 +242,69 @@
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/bubbleOtherRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp" />
+            </HorizontalScrollView>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:background="@color/divider" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="18dp"
+                android:paddingBottom="8dp"
+                android:text="@string/settings_backup_section"
+                android:textColor="@color/accent"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+
             <LinearLayout
-                android:id="@+id/bubbleOtherRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp" />
+                android:paddingBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnExportData"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="@string/export_data"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:backgroundTint="@color/bubble_other" />
+
+                <Button
+                    android:id="@+id/btnImportData"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/import_data"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:backgroundTint="@color/bubble_other" />
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>

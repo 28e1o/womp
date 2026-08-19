@@ -116,6 +116,7 @@ class ChatActivity : AppCompatActivity() {
             selfAvatarProvider = { storage.loadProfile().avatarPath },
             otherAvatarProvider = { character.avatarPath },
             settingsProvider = { appSettings },
+            pinnedIdProvider = { character.pinnedMessageId },
             onLongPress = { message, position -> showMessageOptions(message, position) },
             onMediaClick = { message -> openMedia(message) }
         )
@@ -125,13 +126,18 @@ class ChatActivity : AppCompatActivity() {
         binding.recyclerMessages.adapter = adapter
         attachSwipeToReply()
         scrollToBottom()
+        updatePinnedBar()
+        restoreDraft()
 
         binding.btnSendAsSelf.setOnClickListener { sendMessage(isSelf = true) }
         binding.btnSendAsOther.setOnClickListener { sendMessage(isSelf = false) }
+        binding.btnSendAsNarrator.setOnClickListener { sendMessage(isSelf = true, isNarrator = true) }
         binding.btnCancelReply.setOnClickListener { clearReply() }
         binding.btnCancelAttach.setOnClickListener { clearAttachment() }
         binding.btnAttach.setOnClickListener { showAttachOptions() }
         binding.btnEmoji.setOnClickListener { showEmojiPicker { emoji -> insertEmoji(emoji) } }
+        binding.btnUnpin.setOnClickListener { unpinMessage() }
+        binding.pinnedBar.setOnClickListener { scrollToPinnedMessage() }
 
         binding.editMessage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -199,6 +205,24 @@ class ChatActivity : AppCompatActivity() {
             storage.addSession(cloud.wumboing.rpchat.data.ChatSession(character.id, sessionStartTime, durationSeconds))
         }
         sessionStartTime = 0L
+        saveDraft()
+    }
+
+    private fun restoreDraft() {
+        val draft = character.draftText
+        if (!draft.isNullOrEmpty()) {
+            binding.editMessage.setText(draft)
+            binding.editMessage.setSelection(binding.editMessage.text.length)
+        }
+    }
+
+    private fun saveDraft() {
+        val text = binding.editMessage.text.toString()
+        val newDraft = text.trim().ifEmpty { null }
+        if (character.draftText != newDraft) {
+            character.draftText = newDraft
+            storage.updateCharacter(character)
+        }
     }
 
     private fun updateToolbarHeader() {
@@ -406,10 +430,13 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun showMessageOptions(message: Message, position: Int) {
+        val isPinned = message.id == character.pinnedMessageId
+        val pinLabel = if (isPinned) getString(R.string.unpin_message) else getString(R.string.pin_message)
         val options = arrayOf(
             getString(R.string.delete_message),
             getString(R.string.edit_text),
-            getString(R.string.give_reaction)
+            getString(R.string.give_reaction),
+            pinLabel
         )
         AlertDialog.Builder(this)
             .setItems(options) { _, which ->
@@ -417,17 +444,67 @@ class ChatActivity : AppCompatActivity() {
                     0 -> deleteMessage(position)
                     1 -> editMessageText(message, position)
                     2 -> showReactionPicker(message, position)
+                    3 -> if (isPinned) unpinMessage() else pinMessage(message)
                 }
             }
             .show()
     }
 
+    private fun pinMessage(message: Message) {
+        character.pinnedMessageId = message.id
+        storage.updateCharacter(character)
+        updatePinnedBar()
+        adapter.refreshAvatars()
+    }
+
+    private fun unpinMessage() {
+        character.pinnedMessageId = null
+        storage.updateCharacter(character)
+        updatePinnedBar()
+        adapter.refreshAvatars()
+    }
+
+    private fun updatePinnedBar() {
+        val pinnedId = character.pinnedMessageId
+        val pinnedMessage = pinnedId?.let { id -> storage.loadMessages(character.id).firstOrNull { it.id == id } }
+        if (pinnedMessage == null) {
+            binding.pinnedBar.visibility = View.GONE
+            binding.pinnedDivider.visibility = View.GONE
+            return
+        }
+        binding.pinnedBar.visibility = View.VISIBLE
+        binding.pinnedDivider.visibility = View.VISIBLE
+        binding.txtPinnedPreview.text = pinnedMessage.text.ifEmpty {
+            when (pinnedMessage.mediaType) {
+                "photo" -> "📷 Foto"
+                "video" -> "🎬 Video"
+                "audio" -> "🎵 Audio"
+                "document" -> "📄 Dokumen"
+                else -> ""
+            }
+        }
+    }
+
+    private fun scrollToPinnedMessage() {
+        val pinnedId = character.pinnedMessageId ?: return
+        val messages = storage.loadMessages(character.id)
+        val index = messages.indexOfFirst { it.id == pinnedId }
+        if (index >= 0) {
+            binding.recyclerMessages.scrollToPosition(index)
+        }
+    }
+
     private fun deleteMessage(position: Int) {
         val messages = storage.loadMessages(character.id).toMutableList()
         if (position !in messages.indices) return
-        messages.removeAt(position)
+        val removed = messages.removeAt(position)
         storage.saveMessages(character.id, messages)
         adapter.removeAt(position)
+        if (removed.id == character.pinnedMessageId) {
+            character.pinnedMessageId = null
+            storage.updateCharacter(character)
+            updatePinnedBar()
+        }
     }
 
     private fun editMessageText(message: Message, position: Int) {
@@ -493,7 +570,7 @@ class ChatActivity : AppCompatActivity() {
         binding.replyBar.visibility = View.GONE
     }
 
-    private fun sendMessage(isSelf: Boolean) {
+    private fun sendMessage(isSelf: Boolean, isNarrator: Boolean = false) {
         val text = binding.editMessage.text.toString().trim()
         val media = pendingMedia
         if (text.isEmpty() && media == null) return
@@ -501,6 +578,7 @@ class ChatActivity : AppCompatActivity() {
         val message = Message(
             text = text,
             isSelf = isSelf,
+            isNarrator = isNarrator,
             replyToId = replyingTo?.id,
             replyPreview = binding.txtReplyPreview.text?.toString()?.takeIf { replyingTo != null },
             replyName = replyingToName,

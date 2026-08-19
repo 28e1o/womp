@@ -24,6 +24,7 @@ class MessageAdapter(
     private val selfAvatarProvider: () -> String?,
     private val otherAvatarProvider: () -> String?,
     private val settingsProvider: () -> AppSettings,
+    private val pinnedIdProvider: () -> String?,
     private val onLongPress: (Message, Int) -> Unit,
     private val onMediaClick: (Message) -> Unit
 ) : RecyclerView.Adapter<MessageAdapter.VH>() {
@@ -43,6 +44,22 @@ class MessageAdapter(
         val message = items[position]
         val b = holder.binding
         val settings = settingsProvider()
+        val isPinned = message.id == pinnedIdProvider()
+
+        if (message.isNarrator) {
+            b.contentRow.visibility = View.GONE
+            b.txtNarrator.visibility = View.VISIBLE
+            b.txtNarrator.typeface = ThemeUtils.typefaceFor(settings.fontFamily)
+            b.txtNarrator.text = if (isPinned) "📌 ${message.text}" else message.text
+            b.txtNarrator.setOnLongClickListener {
+                onLongPress(message, holder.bindingAdapterPosition)
+                true
+            }
+            return
+        } else {
+            b.contentRow.visibility = View.VISIBLE
+            b.txtNarrator.visibility = View.GONE
+        }
 
         b.txtMessage.text = message.text
         b.txtMessage.visibility = if (message.text.isEmpty()) View.GONE else View.VISIBLE
@@ -50,11 +67,12 @@ class MessageAdapter(
         b.txtMessage.setTextSize(TypedValue.COMPLEX_UNIT_SP, settings.fontSizeSp)
 
         val timeText = timeFormat.format(Date(message.timestamp))
-        b.txtTime.text = if (message.edited) {
+        val timeLabel = if (message.edited) {
             "$timeText · ${b.root.context.getString(R.string.edited_label)}"
         } else {
             timeText
         }
+        b.txtTime.text = if (isPinned) "📌 $timeLabel" else timeLabel
 
         val rowParams = b.contentRow.layoutParams as? android.widget.LinearLayout.LayoutParams
 

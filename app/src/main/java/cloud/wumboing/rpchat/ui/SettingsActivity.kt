@@ -82,6 +82,62 @@ class SettingsActivity : AppCompatActivity() {
         refreshChatBgRow()
         refreshBubbleSelfRow()
         refreshBubbleOtherRow()
+        setupBackupButtons()
+    }
+
+    // ---------- Backup / Restore ----------
+
+    private val exportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri != null) {
+            val success = cloud.wumboing.rpchat.util.BackupManager.export(this, uri)
+            android.widget.Toast.makeText(
+                this,
+                if (success) R.string.export_success else R.string.export_failed,
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private val importLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) confirmImport(uri)
+    }
+
+    private fun setupBackupButtons() {
+        binding.btnExportData.setOnClickListener {
+            val fileName = "rpchat-backup-${System.currentTimeMillis()}.zip"
+            exportLauncher.launch(fileName)
+        }
+        binding.btnImportData.setOnClickListener {
+            importLauncher.launch("application/zip")
+        }
+    }
+
+    private fun confirmImport(uri: Uri) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.import_confirm_title)
+            .setMessage(R.string.import_confirm_message)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val success = cloud.wumboing.rpchat.util.BackupManager.import(this, uri)
+                android.widget.Toast.makeText(
+                    this,
+                    if (success) R.string.import_success else R.string.import_failed,
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                if (success) {
+                    settings = storage.loadSettings()
+                    setupProfileSection()
+                    refreshFontButtons()
+                    refreshChatBgRow()
+                    refreshBubbleSelfRow()
+                    refreshBubbleOtherRow()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     // ---------- Profil ----------

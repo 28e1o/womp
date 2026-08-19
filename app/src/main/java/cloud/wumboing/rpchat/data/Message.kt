@@ -6,7 +6,8 @@ import java.util.UUID
 /**
  * isSelf = true  -> bubble kanan (dikirim sebagai "aku")
  * isSelf = false -> bubble kiri  (dikirim sebagai karakter/pemeran lain)
- * mediaType: null | "photo" | "video" | "audio"
+ * isNarrator = true -> teks narasi di tengah, tanpa bubble/avatar (isSelf diabaikan)
+ * mediaType: null | "photo" | "video" | "audio" | "document"
  */
 data class Message(
     val id: String = UUID.randomUUID().toString(),
@@ -19,7 +20,8 @@ data class Message(
     var reaction: String? = null,
     var edited: Boolean = false,
     var mediaPath: String? = null,
-    var mediaType: String? = null
+    var mediaType: String? = null,
+    var isNarrator: Boolean = false
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -33,6 +35,7 @@ data class Message(
         put("edited", edited)
         put("mediaPath", mediaPath ?: JSONObject.NULL)
         put("mediaType", mediaType ?: JSONObject.NULL)
+        put("isNarrator", isNarrator)
     }
 
     companion object {
@@ -47,7 +50,8 @@ data class Message(
             reaction = if (!o.has("reaction") || o.isNull("reaction")) null else o.optString("reaction"),
             edited = o.optBoolean("edited", false),
             mediaPath = if (!o.has("mediaPath") || o.isNull("mediaPath")) null else o.optString("mediaPath"),
-            mediaType = if (!o.has("mediaType") || o.isNull("mediaType")) null else o.optString("mediaType")
+            mediaType = if (!o.has("mediaType") || o.isNull("mediaType")) null else o.optString("mediaType"),
+            isNarrator = o.optBoolean("isNarrator", false)
         )
     }
 }
