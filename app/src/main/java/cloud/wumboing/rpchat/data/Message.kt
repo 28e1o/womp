@@ -5,8 +5,10 @@ import java.util.UUID
 
 /**
  * isSelf = true  -> bubble kanan (dikirim sebagai "aku")
- * isSelf = false -> bubble kiri  (dikirim sebagai karakter/pemeran lain)
+ * isSelf = false -> bubble kiri  (dikirim sebagai karakter, atau sebagai anggota grup jika senderId diisi)
  * isNarrator = true -> teks narasi di tengah, tanpa bubble/avatar (isSelf diabaikan)
+ * senderId/senderName/senderAvatarPath -> dipakai di chat grup untuk menandai anggota mana yang
+ * mengirim pesan ini (disimpan permanen di pesan, tidak berubah walau data anggota diedit belakangan)
  * mediaType: null | "photo" | "video" | "audio" | "document"
  */
 data class Message(
@@ -21,7 +23,10 @@ data class Message(
     var edited: Boolean = false,
     var mediaPath: String? = null,
     var mediaType: String? = null,
-    var isNarrator: Boolean = false
+    var isNarrator: Boolean = false,
+    var senderId: String? = null,
+    var senderName: String? = null,
+    var senderAvatarPath: String? = null
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -36,6 +41,9 @@ data class Message(
         put("mediaPath", mediaPath ?: JSONObject.NULL)
         put("mediaType", mediaType ?: JSONObject.NULL)
         put("isNarrator", isNarrator)
+        put("senderId", senderId ?: JSONObject.NULL)
+        put("senderName", senderName ?: JSONObject.NULL)
+        put("senderAvatarPath", senderAvatarPath ?: JSONObject.NULL)
     }
 
     companion object {
@@ -51,7 +59,10 @@ data class Message(
             edited = o.optBoolean("edited", false),
             mediaPath = if (!o.has("mediaPath") || o.isNull("mediaPath")) null else o.optString("mediaPath"),
             mediaType = if (!o.has("mediaType") || o.isNull("mediaType")) null else o.optString("mediaType"),
-            isNarrator = o.optBoolean("isNarrator", false)
+            isNarrator = o.optBoolean("isNarrator", false),
+            senderId = if (!o.has("senderId") || o.isNull("senderId")) null else o.optString("senderId"),
+            senderName = if (!o.has("senderName") || o.isNull("senderName")) null else o.optString("senderName"),
+            senderAvatarPath = if (!o.has("senderAvatarPath") || o.isNull("senderAvatarPath")) null else o.optString("senderAvatarPath")
         )
     }
 }

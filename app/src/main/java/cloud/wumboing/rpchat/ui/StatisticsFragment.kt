@@ -99,15 +99,17 @@ class StatisticsFragment : Fragment() {
 
     private fun refreshStats() {
         val rangeStart = rangeStartMillis()
-        val characters = storage.loadCharacters().associateBy { it.id }
+        val nameById = mutableMapOf<String, String>()
+        storage.loadCharacters().forEach { nameById[it.id] = it.name }
+        storage.loadGroups().forEach { nameById[it.id] = it.name }
         val sessions = storage.loadSessions().filter { it.startTime >= rangeStart }
 
-        val durationByCharacter = mutableMapOf<String, Long>()
+        val durationByChat = mutableMapOf<String, Long>()
         sessions.forEach { s ->
-            durationByCharacter[s.characterId] = (durationByCharacter[s.characterId] ?: 0L) + s.durationSeconds
+            durationByChat[s.characterId] = (durationByChat[s.characterId] ?: 0L) + s.durationSeconds
         }
 
-        val totalSeconds = durationByCharacter.values.sum()
+        val totalSeconds = durationByChat.values.sum()
         binding.txtTotalTime.text = formatDuration(totalSeconds)
 
         val messages = storage.allMessagesWithCharacterId().filter { it.second.timestamp >= rangeStart }
@@ -116,23 +118,23 @@ class StatisticsFragment : Fragment() {
         }
         binding.txtTotalWords.text = totalWords.toString()
 
-        val longestEntry = durationByCharacter.entries.maxByOrNull { it.value }
+        val longestEntry = durationByChat.entries.maxByOrNull { it.value }
         if (longestEntry != null && longestEntry.value > 0) {
-            val name = characters[longestEntry.key]?.name ?: "-"
+            val name = nameById[longestEntry.key] ?: "-"
             binding.txtLongestContact.text = "$name — ${formatDuration(longestEntry.value)}"
         } else {
             binding.txtLongestContact.text = "-"
         }
 
-        renderBarChart(durationByCharacter, characters)
+        renderBarChart(durationByChat, nameById)
     }
 
     private fun renderBarChart(
-        durationByCharacter: Map<String, Long>,
-        characters: Map<String, cloud.wumboing.rpchat.data.Character>
+        durationByChat: Map<String, Long>,
+        nameById: Map<String, String>
     ) {
         binding.barChartContainer.removeAllViews()
-        val sorted = durationByCharacter.entries
+        val sorted = durationByChat.entries
             .filter { it.value > 0 }
             .sortedByDescending { it.value }
 
@@ -146,7 +148,7 @@ class StatisticsFragment : Fragment() {
         val scale = resources.displayMetrics.density
 
         sorted.forEachIndexed { index, entry ->
-            val name = characters[entry.key]?.name ?: "?"
+            val name = nameById[entry.key] ?: "?"
             val color = barColors[index % barColors.size]
 
             val row = LinearLayout(requireContext()).apply {

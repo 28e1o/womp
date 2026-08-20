@@ -1,7 +1,6 @@
 package cloud.wumboing.rpchat.ui
 
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import cloud.wumboing.rpchat.R
 import cloud.wumboing.rpchat.adapter.CharacterAdapter
-import cloud.wumboing.rpchat.data.Character
+import cloud.wumboing.rpchat.data.ChatEntry
 import cloud.wumboing.rpchat.data.Storage
 import cloud.wumboing.rpchat.databinding.FragmentChatListBinding
 import cloud.wumboing.rpchat.util.clipToCircle
@@ -44,11 +43,12 @@ class ChatListFragment : Fragment() {
         (activity as? androidx.appcompat.app.AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(false)
 
         adapter = CharacterAdapter(
-            items = storage.visibleCharacters().toMutableList(),
-            previewProvider = { id -> storage.lastMessagePreview(id) },
-            timeProvider = { id -> storage.lastMessageTimestamp(id) },
-            onClick = { character -> openChat(character) },
-            onLongClick = { character -> confirmHide(character) }
+            items = buildEntries().toMutableList(),
+            previewProvider = { entry -> storage.lastMessagePreview(entry.id) },
+            timeProvider = { entry -> storage.lastMessageTimestamp(entry.id) },
+            draftProvider = { entry -> draftFor(entry) },
+            onClick = { entry -> openChat(entry) },
+            onLongClick = { entry -> confirmHide(entry) }
         )
         binding.recyclerCharacters.layoutManager = LinearLayoutManager(context)
         binding.recyclerCharacters.adapter = adapter
@@ -74,8 +74,22 @@ class ChatListFragment : Fragment() {
         startActivity(Intent(requireContext(), SettingsActivity::class.java))
     }
 
+    private fun buildEntries(): List<ChatEntry> {
+        val characterEntries = storage.visibleCharacters().map { ChatEntry.from(it) }
+        val groupEntries = storage.visibleGroups().map { ChatEntry.from(it) }
+        return (characterEntries + groupEntries).sortedByDescending { storage.lastMessageTimestamp(it.id) ?: 0L }
+    }
+
+    private fun draftFor(entry: ChatEntry): String? {
+        return if (entry.isGroup) {
+            storage.loadGroups().firstOrNull { it.id == entry.id }?.draftText
+        } else {
+            storage.loadCharacters().firstOrNull { it.id == entry.id }?.draftText
+        }
+    }
+
     private fun refreshList() {
-        val list = storage.visibleCharacters()
+        val list = buildEntries()
         adapter.update(list)
         binding.emptyView.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
     }
@@ -86,18 +100,24 @@ class ChatListFragment : Fragment() {
         binding.imgMyAvatar.loadAvatarOrInitials(profile.avatarPath, profile.name, "self")
     }
 
-    private fun openChat(character: Character) {
-        val intent = Intent(requireContext(), ChatActivity::class.java)
-        intent.putExtra(ChatActivity.EXTRA_CHARACTER_ID, character.id)
-        startActivity(intent)
+    private fun openChat(entry: ChatEntry) {
+        if (entry.isGroup) {
+            val intent = Intent(requireContext(), GroupChatActivity::class.java)
+            intent.putExtra(GroupChatActivity.EXTRA_GROUP_ID, entry.id)
+            startActivity(intent)
+        } else {
+            val intent = Intent(requireContext(), ChatActivity::class.java)
+            intent.putExtra(ChatActivity.EXTRA_CHARACTER_ID, entry.id)
+            startActivity(intent)
+        }
     }
 
-    private fun confirmHide(character: Character) {
+    private fun confirmHide(entry: ChatEntry) {
         AlertDialog.Builder(requireContext())
-            .setTitle(character.name)
-            .setMessage("Hapus obrolan ini dari daftar? Kontak & riwayat chat tetap tersimpan, bisa dipanggil lagi lewat tombol +.")
+            .setTitle(entry.name)
+            .setMessage("Hapus obrolan ini dari daftar? Kontak/grup & riwayat chat tetap tersimpan, bisa dipanggil lagi lewat tombol +.")
             .setPositiveButton(R.string.delete_message) { _, _ ->
-                storage.hideFromChatList(character.id)
+                if (entry.isGroup) storage.hideGroupFromChatList(entry.id) else storage.hideFromChatList(entry.id)
                 refreshList()
             }
             .setNegativeButton(R.string.cancel, null)

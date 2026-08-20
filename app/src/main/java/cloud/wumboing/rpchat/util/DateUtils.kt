@@ -9,6 +9,10 @@ object ChatDateUtils {
 
     private val dayNames = arrayOf("Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab") // index = Calendar.DAY_OF_WEEK - 1
     private val monthNames = arrayOf("Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des")
+    private val monthNamesFull = arrayOf(
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    )
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
     /**
@@ -27,6 +31,18 @@ object ChatDateUtils {
             dayDiff in 1..7 -> dayNames[msgCal.get(Calendar.DAY_OF_WEEK) - 1]
             else -> "${msgCal.get(Calendar.DAY_OF_MONTH)} ${monthNames[msgCal.get(Calendar.MONTH)]}"
         }
+    }
+
+    /** Kunci unik per hari kalender, dipakai untuk mendeteksi pergantian hari di daftar chat. */
+    fun dayKey(timestamp: Long): String {
+        val cal = Calendar.getInstance().apply { timeInMillis = timestamp }
+        return "${cal.get(Calendar.YEAR)}-${cal.get(Calendar.DAY_OF_YEAR)}"
+    }
+
+    /** Label separator tanggal di dalam chat, contoh: "19 Agustus". */
+    fun formatDateHeader(timestamp: Long): String {
+        val cal = Calendar.getInstance().apply { timeInMillis = timestamp }
+        return "${cal.get(Calendar.DAY_OF_MONTH)} ${monthNamesFull[cal.get(Calendar.MONTH)]}"
     }
 
     private fun daysBetween(from: Calendar, to: Calendar): Int {

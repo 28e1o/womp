@@ -1,6 +1,5 @@
 package cloud.wumboing.rpchat.adapter
 
-import android.graphics.BitmapFactory
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -10,8 +9,10 @@ import androidx.recyclerview.widget.RecyclerView
 import cloud.wumboing.rpchat.R
 import cloud.wumboing.rpchat.data.AppSettings
 import cloud.wumboing.rpchat.data.Message
+import cloud.wumboing.rpchat.databinding.ItemDateSeparatorBinding
 import cloud.wumboing.rpchat.databinding.ItemMessageBinding
 import cloud.wumboing.rpchat.util.BitmapUtils
+import cloud.wumboing.rpchat.util.ChatDateUtils
 import cloud.wumboing.rpchat.util.ThemeUtils
 import cloud.wumboing.rpchat.util.clipToCircle
 import cloud.wumboing.rpchat.util.loadAvatarOrInitials
@@ -19,6 +20,11 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private sealed class ChatRow {
+    data class DateRow(val label: String) : ChatRow()
+    data class MsgRow(val message: Message) : ChatRow()
+}
 
 class MessageAdapter(
     private val items: MutableList<Message>,
@@ -29,24 +35,59 @@ class MessageAdapter(
     private val otherSeed: String,
     private val settingsProvider: () -> AppSettings,
     private val pinnedIdProvider: () -> String?,
-    private val onLongPress: (Message, Int) -> Unit,
+    private val onLongPress: (Message) -> Unit,
     private val onMediaClick: (Message) -> Unit
-) : RecyclerView.Adapter<MessageAdapter.VH>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-
-    inner class VH(val binding: ItemMessageBinding) : RecyclerView.ViewHolder(binding.root)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val binding = ItemMessageBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        binding.imgAvatarLeft.clipToCircle()
-        binding.imgAvatarRight.clipToCircle()
-        return VH(binding)
+    companion object {
+        private const val TYPE_MESSAGE = 0
+        private const val TYPE_DATE = 1
     }
 
-    override fun onBindViewHolder(holder: VH, position: Int) {
-        val message = items[position]
-        val b = holder.binding
+    private var rows: List<ChatRow> = buildRows(items)
+    private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+    private fun buildRows(messages: List<Message>): List<ChatRow> {
+        val result = mutableListOf<ChatRow>()
+        var lastDay: String? = null
+        for (m in messages) {
+            val dayKey = ChatDateUtils.dayKey(m.timestamp)
+            if (dayKey != lastDay) {
+                result.add(ChatRow.DateRow(ChatDateUtils.formatDateHeader(m.timestamp)))
+                lastDay = dayKey
+            }
+            result.add(ChatRow.MsgRow(m))
+        }
+        return result
+    }
+
+    inner class MsgVH(val binding: ItemMessageBinding) : RecyclerView.ViewHolder(binding.root)
+    inner class DateVH(val binding: ItemDateSeparatorBinding) : RecyclerView.ViewHolder(binding.root)
+
+    override fun getItemViewType(position: Int): Int = when (rows[position]) {
+        is ChatRow.DateRow -> TYPE_DATE
+        is ChatRow.MsgRow -> TYPE_MESSAGE
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (viewType == TYPE_DATE) {
+            DateVH(ItemDateSeparatorBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+        } else {
+            val b = ItemMessageBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+            b.imgAvatarLeft.clipToCircle()
+            b.imgAvatarRight.clipToCircle()
+            MsgVH(b)
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val row = rows[position]) {
+            is ChatRow.DateRow -> (holder as DateVH).binding.txtDateLabel.text = row.label
+            is ChatRow.MsgRow -> bindMessage((holder as MsgVH).binding, row.message)
+        }
+    }
+
+    private fun bindMessage(b: ItemMessageBinding, message: Message) {
         val settings = settingsProvider()
         val isPinned = message.id == pinnedIdProvider()
 
@@ -56,7 +97,7 @@ class MessageAdapter(
             b.txtNarrator.typeface = ThemeUtils.typefaceFor(settings.fontFamily)
             b.txtNarrator.text = if (isPinned) "📌 ${message.text}" else message.text
             b.txtNarrator.setOnLongClickListener {
-                onLongPress(message, holder.bindingAdapterPosition)
+                onLongPress(message)
                 true
             }
             return
@@ -91,7 +132,10 @@ class MessageAdapter(
             rowParams?.gravity = Gravity.START
             b.imgAvatarRight.visibility = View.GONE
             b.imgAvatarLeft.visibility = View.VISIBLE
-            b.imgAvatarLeft.loadAvatarOrInitials(otherAvatarProvider(), otherNameProvider(), otherSeed)
+            val avatarPath = message.senderAvatarPath ?: otherAvatarProvider()
+            val name = message.senderName ?: otherNameProvider()
+            val seed = message.senderId ?: otherSeed
+            b.imgAvatarLeft.loadAvatarOrInitials(avatarPath, name, seed)
         }
         b.contentRow.layoutParams = rowParams
 
@@ -149,38 +193,39 @@ class MessageAdapter(
         }
 
         b.contentRow.setOnLongClickListener {
-            onLongPress(message, holder.bindingAdapterPosition)
+            onLongPress(message)
             true
         }
     }
 
-    override fun getItemCount() = items.size
+    override fun getItemCount() = rows.size
 
-    fun getItem(position: Int): Message = items[position]
+    fun getMessageAtPosition(position: Int): Message? = (rows.getOrNull(position) as? ChatRow.MsgRow)?.message
 
     fun submit(newItems: List<Message>) {
         items.clear()
         items.addAll(newItems)
+        rows = buildRows(items)
         notifyDataSetChanged()
     }
 
     fun addMessage(message: Message) {
         items.add(message)
-        notifyItemInserted(items.size - 1)
+        rows = buildRows(items)
+        notifyDataSetChanged()
     }
 
-    fun removeAt(position: Int) {
-        if (position in items.indices) {
-            items.removeAt(position)
-            notifyItemRemoved(position)
-        }
+    fun removeMessageById(id: String) {
+        items.removeAll { it.id == id }
+        rows = buildRows(items)
+        notifyDataSetChanged()
     }
 
-    fun updateAt(position: Int, message: Message) {
-        if (position in items.indices) {
-            items[position] = message
-            notifyItemChanged(position)
-        }
+    fun updateMessageById(id: String, updated: Message) {
+        val idx = items.indexOfFirst { it.id == id }
+        if (idx >= 0) items[idx] = updated
+        rows = buildRows(items)
+        notifyDataSetChanged()
     }
 
     fun refreshAvatars() {

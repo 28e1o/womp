@@ -12,6 +12,7 @@ import java.io.File
 class Storage(context: Context) {
 
     private val charactersFile = File(context.filesDir, "characters.json")
+    private val groupsFile = File(context.filesDir, "groups.json")
     private val profileFile = File(context.filesDir, "profile.json")
     private val settingsFile = File(context.filesDir, "settings.json")
     private val sessionsFile = File(context.filesDir, "sessions.json")
@@ -107,6 +108,59 @@ class Storage(context: Context) {
         if (idx >= 0) {
             list[idx].visible = true
             saveCharacters(list)
+        }
+    }
+
+    // ---------- Grup ----------
+
+    fun loadGroups(): MutableList<Group> {
+        if (!groupsFile.exists()) return mutableListOf()
+        val arr = JSONArray(groupsFile.readText())
+        val list = mutableListOf<Group>()
+        for (i in 0 until arr.length()) {
+            list.add(Group.fromJson(arr.getJSONObject(i)))
+        }
+        return list
+    }
+
+    fun visibleGroups(): List<Group> = loadGroups().filter { it.visible }
+
+    fun saveGroups(list: List<Group>) {
+        val arr = JSONArray()
+        list.forEach { arr.put(it.toJson()) }
+        groupsFile.writeText(arr.toString())
+    }
+
+    fun addGroup(group: Group) {
+        val list = loadGroups()
+        list.add(group)
+        saveGroups(list)
+    }
+
+    fun updateGroup(group: Group) {
+        val list = loadGroups()
+        val idx = list.indexOfFirst { it.id == group.id }
+        if (idx >= 0) {
+            list[idx] = group
+            saveGroups(list)
+        }
+    }
+
+    fun hideGroupFromChatList(groupId: String) {
+        val list = loadGroups()
+        val idx = list.indexOfFirst { it.id == groupId }
+        if (idx >= 0) {
+            list[idx].visible = false
+            saveGroups(list)
+        }
+    }
+
+    fun unhideGroup(groupId: String) {
+        val list = loadGroups()
+        val idx = list.indexOfFirst { it.id == groupId }
+        if (idx >= 0) {
+            list[idx].visible = true
+            saveGroups(list)
         }
     }
 

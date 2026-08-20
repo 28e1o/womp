@@ -80,4 +80,16 @@
     <string name="change_avatar">Ubah Foto Profil</string>
     <string name="delete_status_photo">Hapus Foto Ini</string>
     <string name="character_profile">Profil Karakter</string>
+    <string name="member_name_hint">Nama anggota</string>
+    <string name="group_name_hint">Nama grup</string>
+    <string name="members_label">Anggota</string>
+    <string name="add_member">+ Tambah Anggota</string>
+    <string name="create_group_button">Buat Grup</string>
+    <string name="remove_member">Hapus Anggota</string>
+    <string name="group_profile">Profil Grup</string>
+    <string name="change_group_photo">Ubah Foto Grup</string>
+    <string name="send_as_member">Kirim sebagai anggota</string>
+    <string name="choose_member">Pilih Anggota</string>
+    <string name="no_members_yet">Belum ada anggota. Tambahkan lewat menu titik tiga.</string>
+    <string name="edit_member">Edit Anggota</string>
 </resources>

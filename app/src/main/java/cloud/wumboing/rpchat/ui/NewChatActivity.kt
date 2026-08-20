@@ -7,13 +7,13 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import cloud.wumboing.rpchat.R
 import cloud.wumboing.rpchat.adapter.CharacterAdapter
+import cloud.wumboing.rpchat.data.ChatEntry
 import cloud.wumboing.rpchat.data.Character
 import cloud.wumboing.rpchat.data.Storage
 import cloud.wumboing.rpchat.databinding.ActivityNewChatBinding
@@ -25,7 +25,7 @@ class NewChatActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityNewChatBinding
     private lateinit var storage: Storage
-    private var allContacts: List<Character> = emptyList()
+    private var allEntries: List<ChatEntry> = emptyList()
 
     private var pendingAvatarCroppedPath: String? = null
     private var dialogBinding: DialogAddCharacterBinding? = null
@@ -60,44 +60,59 @@ class NewChatActivity : AppCompatActivity() {
         binding.recyclerAllContacts.layoutManager = LinearLayoutManager(this)
 
         binding.rowNewGroup.setOnClickListener {
-            Toast.makeText(this, R.string.new_group_soon, Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, CreateGroupActivity::class.java))
+            finish()
         }
         binding.rowNewContact.setOnClickListener { showAddCharacterDialog() }
 
         binding.editSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) { filterContacts(s?.toString() ?: "") }
+            override fun afterTextChanged(s: Editable?) { filterEntries(s?.toString() ?: "") }
         })
 
-        loadContacts()
+        loadEntries()
     }
 
-    private fun loadContacts() {
-        allContacts = storage.loadCharacters()
-        filterContacts(binding.editSearch.text.toString())
+    private fun loadEntries() {
+        val characterEntries = storage.loadCharacters().map { ChatEntry.from(it) }
+        val groupEntries = storage.loadGroups().map { ChatEntry.from(it) }
+        allEntries = characterEntries + groupEntries
+        filterEntries(binding.editSearch.text.toString())
     }
 
-    private fun filterContacts(query: String) {
+    private fun filterEntries(query: String) {
         val filtered = if (query.isBlank()) {
-            allContacts
+            allEntries
         } else {
-            allContacts.filter { it.name.contains(query, ignoreCase = true) }
+            allEntries.filter { it.name.contains(query, ignoreCase = true) }
         }
 
-        if (filtered.isEmpty()) {
-            binding.txtAllContactsLabel.visibility = View.GONE
-        } else {
-            binding.txtAllContactsLabel.visibility = View.VISIBLE
-        }
+        binding.txtAllContactsLabel.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
 
         binding.recyclerAllContacts.adapter = CharacterAdapter(
             items = filtered.toMutableList(),
-            previewProvider = { id -> storage.lastMessagePreview(id) },
-            timeProvider = { id -> storage.lastMessageTimestamp(id) },
-            onClick = { character -> openCharacterChat(character) },
+            previewProvider = { entry -> storage.lastMessagePreview(entry.id) },
+            timeProvider = { entry -> storage.lastMessageTimestamp(entry.id) },
+            draftProvider = { null },
+            onClick = { entry -> openEntry(entry) },
             onLongClick = { }
         )
+    }
+
+    private fun openEntry(entry: ChatEntry) {
+        if (entry.isGroup) {
+            storage.unhideGroup(entry.id)
+            val intent = Intent(this, GroupChatActivity::class.java)
+            intent.putExtra(GroupChatActivity.EXTRA_GROUP_ID, entry.id)
+            startActivity(intent)
+        } else {
+            storage.unhide(entry.id)
+            val intent = Intent(this, ChatActivity::class.java)
+            intent.putExtra(ChatActivity.EXTRA_CHARACTER_ID, entry.id)
+            startActivity(intent)
+        }
+        finish()
     }
 
     private fun openCharacterChat(character: Character) {

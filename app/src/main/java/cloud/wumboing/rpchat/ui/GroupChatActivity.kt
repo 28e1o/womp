@@ -2,7 +2,6 @@ package cloud.wumboing.rpchat.ui
 
 import android.content.Intent
 import android.database.Cursor
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -23,11 +22,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import cloud.wumboing.rpchat.R
 import cloud.wumboing.rpchat.adapter.MessageAdapter
-import cloud.wumboing.rpchat.data.Character
+import cloud.wumboing.rpchat.data.AppSettings
+import cloud.wumboing.rpchat.data.ChatSession
+import cloud.wumboing.rpchat.data.Group
 import cloud.wumboing.rpchat.data.Message
 import cloud.wumboing.rpchat.data.Storage
 import cloud.wumboing.rpchat.databinding.ActivityChatBinding
-import cloud.wumboing.rpchat.databinding.DialogAddCharacterBinding
 import cloud.wumboing.rpchat.util.BitmapUtils
 import cloud.wumboing.rpchat.util.clipToCircle
 import cloud.wumboing.rpchat.util.loadAvatarOrInitials
@@ -35,10 +35,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-class ChatActivity : AppCompatActivity() {
+class GroupChatActivity : AppCompatActivity() {
 
     companion object {
-        const val EXTRA_CHARACTER_ID = "extra_character_id"
+        const val EXTRA_GROUP_ID = "extra_group_id"
         private val REACTIONS = listOf("👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "😡")
         private val EMOJIS = listOf(
             "😀", "😁", "😂", "🤣", "😊", "😍", "😘", "😜", "🤔", "😎",
@@ -53,35 +53,13 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChatBinding
     private lateinit var storage: Storage
     private lateinit var adapter: MessageAdapter
-    private lateinit var character: Character
-    private var appSettings: cloud.wumboing.rpchat.data.AppSettings = cloud.wumboing.rpchat.data.AppSettings()
+    private lateinit var group: Group
+    private var appSettings: AppSettings = AppSettings()
     private var sessionStartTime: Long = 0L
 
     private var replyingTo: Message? = null
     private var replyingToName: String? = null
     private var pendingMedia: PendingMedia? = null
-
-    private var pendingAvatarCroppedPath: String? = null
-    private var editDialogBinding: DialogAddCharacterBinding? = null
-
-    private val pickAvatarLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri -> if (uri != null) launchCrop(uri) }
-
-    private val cropLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val path = result.data?.getStringExtra(CropAvatarActivity.EXTRA_RESULT_PATH)
-            if (path != null) {
-                pendingAvatarCroppedPath = path
-                editDialogBinding?.imgAvatarPreview?.let { iv ->
-                    val bmp = BitmapFactory.decodeFile(path)
-                    if (bmp != null) iv.setImageBitmap(bmp)
-                }
-            }
-        }
-    }
 
     private var pendingMediaType: String? = null
     private val pickMediaLauncher = registerForActivityResult(
@@ -98,29 +76,29 @@ class ChatActivity : AppCompatActivity() {
         binding.imgToolbarAvatar.clipToCircle()
 
         storage = Storage(this)
-        val characterId = intent.getStringExtra(EXTRA_CHARACTER_ID)
-        val found = storage.loadCharacters().firstOrNull { it.id == characterId }
+        val groupId = intent.getStringExtra(EXTRA_GROUP_ID)
+        val found = storage.loadGroups().firstOrNull { it.id == groupId }
         if (found == null) {
             finish()
             return
         }
-        character = found
+        group = found
         appSettings = storage.loadSettings()
         applyChatBackground()
 
         binding.toolbar.setNavigationOnClickListener { finish() }
-        binding.characterHeader.setOnClickListener { showEditCharacterDialog() }
+        binding.characterHeader.setOnClickListener { openGroupProfile() }
         updateToolbarHeader()
 
         adapter = MessageAdapter(
-            items = storage.loadMessages(character.id),
+            items = storage.loadMessages(group.id),
             selfAvatarProvider = { storage.loadProfile().avatarPath },
             selfNameProvider = { storage.loadProfile().name },
-            otherAvatarProvider = { character.avatarPath },
-            otherNameProvider = { character.name },
-            otherSeed = character.id,
+            otherAvatarProvider = { group.avatarPath },
+            otherNameProvider = { group.name },
+            otherSeed = group.id,
             settingsProvider = { appSettings },
-            pinnedIdProvider = { character.pinnedMessageId },
+            pinnedIdProvider = { group.pinnedMessageId },
             onLongPress = { message -> showMessageOptions(message) },
             onMediaClick = { message -> openMedia(message) }
         )
@@ -134,7 +112,7 @@ class ChatActivity : AppCompatActivity() {
         restoreDraft()
 
         binding.btnSendAsSelf.setOnClickListener { sendMessage(isSelf = true) }
-        binding.btnSendAsOther.setOnClickListener { sendMessage(isSelf = false) }
+        binding.btnSendAsOther.setOnClickListener { showMemberPicker() }
         binding.btnSendAsNarrator.setOnClickListener { sendMessage(isSelf = true, isNarrator = true) }
         binding.btnCancelReply.setOnClickListener { clearReply() }
         binding.btnCancelAttach.setOnClickListener { clearAttachment() }
@@ -142,11 +120,7 @@ class ChatActivity : AppCompatActivity() {
         binding.btnEmoji.setOnClickListener { showEmojiPicker { emoji -> insertEmoji(emoji) } }
         binding.btnUnpin.setOnClickListener { unpinMessage() }
         binding.pinnedBar.setOnClickListener { scrollToPinnedMessage() }
-        binding.btnMoreOptions.setOnClickListener {
-            val intent = Intent(this, CharacterProfileActivity::class.java)
-            intent.putExtra(CharacterProfileActivity.EXTRA_CHARACTER_ID, character.id)
-            startActivity(intent)
-        }
+        binding.btnMoreOptions.setOnClickListener { openGroupProfile() }
         // btnCall sengaja tidak diberi aksi (belum berfungsi)
 
         binding.editMessage.addTextChangedListener(object : TextWatcher {
@@ -155,6 +129,12 @@ class ChatActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) { updateSendIconsVisibility() }
         })
         updateSendIconsVisibility()
+    }
+
+    private fun openGroupProfile() {
+        val intent = Intent(this, GroupProfileActivity::class.java)
+        intent.putExtra(GroupProfileActivity.EXTRA_GROUP_ID, group.id)
+        startActivity(intent)
     }
 
     private fun updateSendIconsVisibility() {
@@ -203,23 +183,26 @@ class ChatActivity : AppCompatActivity() {
         if (!::adapter.isInitialized) return
         appSettings = storage.loadSettings()
         applyChatBackground()
+        // refresh data grup (anggota bisa berubah dari layar profil grup)
+        storage.loadGroups().firstOrNull { it.id == group.id }?.let { group = it }
+        updateToolbarHeader()
         adapter.refreshAvatars()
         sessionStartTime = System.currentTimeMillis()
     }
 
     override fun onPause() {
         super.onPause()
-        if (!::character.isInitialized || sessionStartTime == 0L) return
+        if (!::group.isInitialized || sessionStartTime == 0L) return
         val durationSeconds = (System.currentTimeMillis() - sessionStartTime) / 1000
         if (durationSeconds > 0) {
-            storage.addSession(cloud.wumboing.rpchat.data.ChatSession(character.id, sessionStartTime, durationSeconds))
+            storage.addSession(ChatSession(group.id, sessionStartTime, durationSeconds))
         }
         sessionStartTime = 0L
         saveDraft()
     }
 
     private fun restoreDraft() {
-        val draft = character.draftText
+        val draft = group.draftText
         if (!draft.isNullOrEmpty()) {
             binding.editMessage.setText(draft)
             binding.editMessage.setSelection(binding.editMessage.text.length)
@@ -227,80 +210,45 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun saveDraft() {
-        val text = binding.editMessage.text.toString()
-        val newDraft = text.trim().ifEmpty { null }
-        if (character.draftText != newDraft) {
-            character.draftText = newDraft
-            storage.updateCharacter(character)
+        val newDraft = binding.editMessage.text.toString().trim().ifEmpty { null }
+        if (group.draftText != newDraft) {
+            group.draftText = newDraft
+            storage.updateGroup(group)
         }
     }
 
     private fun updateToolbarHeader() {
-        binding.txtToolbarName.text = character.name
-        if (!character.bio.isNullOrEmpty()) {
-            binding.txtToolbarBio.text = character.bio
+        binding.txtToolbarName.text = group.name
+        val summary = group.memberSummary()
+        if (summary.isNotEmpty()) {
+            binding.txtToolbarBio.text = summary
             binding.txtToolbarBio.visibility = View.VISIBLE
         } else {
             binding.txtToolbarBio.visibility = View.GONE
         }
-        binding.imgToolbarAvatar.loadAvatarOrInitials(character.avatarPath, character.name, character.id)
+        binding.imgToolbarAvatar.loadAvatarOrInitials(group.avatarPath, group.name, group.id)
     }
 
-    private fun launchCrop(uri: Uri) {
-        val intent = Intent(this, CropAvatarActivity::class.java)
-        intent.putExtra(CropAvatarActivity.EXTRA_IMAGE_URI, uri.toString())
-        cropLauncher.launch(intent)
-    }
+    // ---------- Pilih anggota untuk kirim pesan ----------
 
-    private fun showEditCharacterDialog() {
-        pendingAvatarCroppedPath = null
-        val db = DialogAddCharacterBinding.inflate(layoutInflater)
-        db.imgAvatarPreview.clipToCircle()
-        editDialogBinding = db
-
-        db.editName.setText(character.name)
-        db.editBio.setText(character.bio ?: "")
-        character.avatarPath?.let { path ->
-            val f = File(path)
-            if (f.exists()) {
-                val bmp = BitmapFactory.decodeFile(path)
-                if (bmp != null) db.imgAvatarPreview.setImageBitmap(bmp)
-            }
+    private fun showMemberPicker() {
+        if (group.members.isEmpty()) {
+            android.widget.Toast.makeText(this, R.string.no_members_yet, android.widget.Toast.LENGTH_SHORT).show()
+            return
         }
-
-        db.imgAvatarPreview.setOnClickListener {
-            pickAvatarLauncher.launch("image/*")
-        }
-
+        val names = group.members.map { it.name }.toTypedArray()
         AlertDialog.Builder(this)
-            .setTitle(R.string.edit_character)
-            .setView(db.root)
-            .setPositiveButton(R.string.save) { _, _ ->
-                val name = db.editName.text.toString().trim()
-                if (name.isNotEmpty()) character.name = name
-                character.bio = db.editBio.text.toString().trim().ifEmpty { null }
-                pendingAvatarCroppedPath?.let { path ->
-                    character.avatarPath = copyCroppedToInternal(path, "char_${character.id}")
-                }
-                storage.updateCharacter(character)
-                updateToolbarHeader()
-                adapter.refreshAvatars()
-                editDialogBinding = null
-            }
-            .setNegativeButton(R.string.cancel) { _, _ ->
-                editDialogBinding = null
+            .setTitle(R.string.choose_member)
+            .setItems(names) { _, which ->
+                val member = group.members[which]
+                sendMessage(
+                    isSelf = false,
+                    senderId = member.id,
+                    senderName = member.name,
+                    senderAvatarPath = member.avatarPath
+                )
             }
             .show()
-    }
-
-    private fun copyCroppedToInternal(tempPath: String, key: String): String? {
-        return try {
-            val outFile = File(storage.avatarsDir, "$key.jpg")
-            File(tempPath).copyTo(outFile, overwrite = true)
-            outFile.absolutePath
-        } catch (e: Exception) {
-            null
-        }
     }
 
     // ---------- Attachment (photo/video/audio/dokumen) ----------
@@ -440,7 +388,7 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun showMessageOptions(message: Message) {
-        val isPinned = message.id == character.pinnedMessageId
+        val isPinned = message.id == group.pinnedMessageId
         val pinLabel = if (isPinned) getString(R.string.unpin_message) else getString(R.string.pin_message)
         val options = arrayOf(
             getString(R.string.delete_message),
@@ -461,22 +409,22 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun pinMessage(message: Message) {
-        character.pinnedMessageId = message.id
-        storage.updateCharacter(character)
+        group.pinnedMessageId = message.id
+        storage.updateGroup(group)
         updatePinnedBar()
         adapter.refreshAvatars()
     }
 
     private fun unpinMessage() {
-        character.pinnedMessageId = null
-        storage.updateCharacter(character)
+        group.pinnedMessageId = null
+        storage.updateGroup(group)
         updatePinnedBar()
         adapter.refreshAvatars()
     }
 
     private fun updatePinnedBar() {
-        val pinnedId = character.pinnedMessageId
-        val pinnedMessage = pinnedId?.let { id -> storage.loadMessages(character.id).firstOrNull { it.id == id } }
+        val pinnedId = group.pinnedMessageId
+        val pinnedMessage = pinnedId?.let { id -> storage.loadMessages(group.id).firstOrNull { it.id == id } }
         if (pinnedMessage == null) {
             binding.pinnedBar.visibility = View.GONE
             binding.pinnedDivider.visibility = View.GONE
@@ -496,8 +444,8 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun scrollToPinnedMessage() {
-        val pinnedId = character.pinnedMessageId ?: return
-        val messages = storage.loadMessages(character.id)
+        val pinnedId = group.pinnedMessageId ?: return
+        val messages = storage.loadMessages(group.id)
         val index = messages.indexOfFirst { it.id == pinnedId }
         if (index >= 0) {
             binding.recyclerMessages.scrollToPosition(index)
@@ -505,15 +453,15 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun deleteMessage(message: Message) {
-        val messages = storage.loadMessages(character.id).toMutableList()
+        val messages = storage.loadMessages(group.id).toMutableList()
         val idx = messages.indexOfFirst { it.id == message.id }
         if (idx < 0) return
         messages.removeAt(idx)
-        storage.saveMessages(character.id, messages)
+        storage.saveMessages(group.id, messages)
         adapter.removeMessageById(message.id)
-        if (message.id == character.pinnedMessageId) {
-            character.pinnedMessageId = null
-            storage.updateCharacter(character)
+        if (message.id == group.pinnedMessageId) {
+            group.pinnedMessageId = null
+            storage.updateGroup(group)
             updatePinnedBar()
         }
     }
@@ -530,12 +478,12 @@ class ChatActivity : AppCompatActivity() {
             .setPositiveButton(R.string.save) { _, _ ->
                 val newText = input.text.toString().trim()
                 if (newText.isNotEmpty()) {
-                    val messages = storage.loadMessages(character.id).toMutableList()
+                    val messages = storage.loadMessages(group.id).toMutableList()
                     val idx = messages.indexOfFirst { it.id == message.id }
                     if (idx >= 0) {
                         val updated = messages[idx].copy(text = newText, edited = true)
                         messages[idx] = updated
-                        storage.saveMessages(character.id, messages)
+                        storage.saveMessages(group.id, messages)
                         adapter.updateMessageById(message.id, updated)
                     }
                 }
@@ -548,13 +496,13 @@ class ChatActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setItems(REACTIONS.toTypedArray()) { _, which ->
                 val emoji = REACTIONS[which]
-                val messages = storage.loadMessages(character.id).toMutableList()
+                val messages = storage.loadMessages(group.id).toMutableList()
                 val idx = messages.indexOfFirst { it.id == message.id }
                 if (idx >= 0) {
                     val current = messages[idx]
                     val updated = current.copy(reaction = if (current.reaction == emoji) null else emoji)
                     messages[idx] = updated
-                    storage.saveMessages(character.id, messages)
+                    storage.saveMessages(group.id, messages)
                     adapter.updateMessageById(message.id, updated)
                 }
             }
@@ -563,10 +511,10 @@ class ChatActivity : AppCompatActivity() {
 
     private fun startReply(message: Message) {
         replyingTo = message
-        replyingToName = if (message.isSelf) storage.loadProfile().name else character.name
+        replyingToName = if (message.isSelf) storage.loadProfile().name else (message.senderName ?: group.name)
         binding.replyBar.visibility = View.VISIBLE
         binding.txtReplyLabel.text = "${getString(R.string.reply_to)} $replyingToName"
-        binding.txtReplyPreview.text = if (!message.text.isEmpty()) {
+        binding.txtReplyPreview.text = if (message.text.isNotEmpty()) {
             message.text
         } else when (message.mediaType) {
             "photo" -> "📷 Foto"
@@ -583,7 +531,13 @@ class ChatActivity : AppCompatActivity() {
         binding.replyBar.visibility = View.GONE
     }
 
-    private fun sendMessage(isSelf: Boolean, isNarrator: Boolean = false) {
+    private fun sendMessage(
+        isSelf: Boolean,
+        isNarrator: Boolean = false,
+        senderId: String? = null,
+        senderName: String? = null,
+        senderAvatarPath: String? = null
+    ) {
         val text = binding.editMessage.text.toString().trim()
         val media = pendingMedia
         if (text.isEmpty() && media == null) return
@@ -596,12 +550,15 @@ class ChatActivity : AppCompatActivity() {
             replyPreview = binding.txtReplyPreview.text?.toString()?.takeIf { replyingTo != null },
             replyName = replyingToName,
             mediaPath = media?.path,
-            mediaType = media?.type
+            mediaType = media?.type,
+            senderId = senderId,
+            senderName = senderName,
+            senderAvatarPath = senderAvatarPath
         )
 
-        val messages = storage.loadMessages(character.id)
+        val messages = storage.loadMessages(group.id)
         messages.add(message)
-        storage.saveMessages(character.id, messages)
+        storage.saveMessages(group.id, messages)
 
         adapter.addMessage(message)
         binding.editMessage.text.clear()
