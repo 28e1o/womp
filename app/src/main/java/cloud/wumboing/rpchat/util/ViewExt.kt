@@ -37,3 +37,26 @@ fun ImageView.loadAvatarOrInitials(path: String?, name: String, seed: String) {
     }
     setImageBitmap(cloud.wumboing.rpchat.util.AvatarUtils.initialsBitmap(name, seed))
 }
+
+/**
+ * Update avatar inisial secara live setiap nama diketik, selama belum ada foto asli
+ * yang dipilih (hasCustomAvatar() == false). Dipakai di dialog buat/edit kontak, grup,
+ * anggota grup, dan profil sendiri, supaya preview avatar langsung menyesuaikan tanpa
+ * perlu disimpan dulu.
+ */
+fun android.widget.EditText.wireLiveInitialsPreview(
+    avatarView: ImageView,
+    seed: String,
+    hasCustomAvatar: () -> Boolean
+) {
+    addTextChangedListener(object : android.text.TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        override fun afterTextChanged(s: android.text.Editable?) {
+            if (!hasCustomAvatar()) {
+                val name = s?.toString()?.trim().let { if (it.isNullOrEmpty()) "?" else it }
+                avatarView.setImageBitmap(cloud.wumboing.rpchat.util.AvatarUtils.initialsBitmap(name, seed))
+            }
+        }
+    })
+}

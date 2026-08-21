@@ -19,6 +19,7 @@ import cloud.wumboing.rpchat.data.Storage
 import cloud.wumboing.rpchat.databinding.ActivityNewChatBinding
 import cloud.wumboing.rpchat.databinding.DialogAddCharacterBinding
 import cloud.wumboing.rpchat.util.clipToCircle
+import cloud.wumboing.rpchat.util.wireLiveInitialsPreview
 import java.io.File
 
 class NewChatActivity : AppCompatActivity() {
@@ -135,6 +136,9 @@ class NewChatActivity : AppCompatActivity() {
         db.imgAvatarPreview.clipToCircle()
         dialogBinding = db
 
+        val newId = java.util.UUID.randomUUID().toString()
+        db.editName.wireLiveInitialsPreview(db.imgAvatarPreview, newId) { pendingAvatarCroppedPath != null }
+
         db.imgAvatarPreview.setOnClickListener {
             pickAvatarLauncher.launch("image/*")
         }
@@ -146,7 +150,7 @@ class NewChatActivity : AppCompatActivity() {
                 val name = db.editName.text.toString().trim()
                 val bio = db.editBio.text.toString().trim().ifEmpty { null }
                 if (name.isNotEmpty()) {
-                    val character = Character(name = name, bio = bio)
+                    val character = Character(id = newId, name = name, bio = bio)
                     pendingAvatarCroppedPath?.let {
                         character.avatarPath = copyCroppedToInternal(it, "char_${character.id}")
                     }

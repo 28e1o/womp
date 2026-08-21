@@ -8,4 +8,7 @@
     <color name="text_secondary">#8A96A3</color>
     <color name="reply_bar">#4EA4F6</color>
     <color name="divider">#26374A</color>
+    <color name="identity_bg_notes">#4A6FA5</color>
+    <color name="identity_bg_calc">#2E7D5B</color>
+    <color name="identity_bg_weather">#5B9BD5</color>
 </resources>

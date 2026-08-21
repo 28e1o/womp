@@ -20,6 +20,10 @@ class Storage(context: Context) {
     val avatarsDir = File(context.filesDir, "avatars").apply { mkdirs() }
     val mediaDir = File(context.filesDir, "media").apply { mkdirs() }
     val statusDir = File(context.filesDir, "status").apply { mkdirs() }
+    val stickersDir = File(context.filesDir, "stickers").apply { mkdirs() }
+
+    fun loadStickers(): List<File> =
+        stickersDir.listFiles()?.filter { it.isFile }?.sortedBy { it.name } ?: emptyList()
 
     fun loadSessions(): MutableList<ChatSession> {
         if (!sessionsFile.exists()) return mutableListOf()
@@ -191,6 +195,7 @@ class Storage(context: Context) {
             "video" -> "🎬 Video"
             "audio" -> "🎵 Audio"
             "document" -> "📄 Dokumen"
+            "sticker" -> "🖼️ Stiker"
             else -> last.text
         }
     }

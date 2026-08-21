@@ -25,6 +25,7 @@ import cloud.wumboing.rpchat.databinding.ActivitySettingsBinding
 import cloud.wumboing.rpchat.util.ThemeUtils
 import cloud.wumboing.rpchat.util.clipToCircle
 import cloud.wumboing.rpchat.util.loadAvatarOrInitials
+import cloud.wumboing.rpchat.util.wireLiveInitialsPreview
 import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
@@ -84,6 +85,7 @@ class SettingsActivity : AppCompatActivity() {
         refreshBubbleSelfRow()
         refreshBubbleOtherRow()
         setupBackupButtons()
+        setupAppIdentitySection()
     }
 
     // ---------- Backup / Restore ----------
@@ -143,11 +145,21 @@ class SettingsActivity : AppCompatActivity() {
 
     // ---------- Profil ----------
 
+    private var liveAvatarWatcherWired = false
+
     private fun setupProfileSection() {
         val profile = storage.loadProfile()
         binding.editSettingsName.setText(profile.name)
         binding.editSettingsBio.setText(profile.bio ?: "")
         binding.imgSettingsAvatar.loadAvatarOrInitials(profile.avatarPath, profile.name, "self")
+
+        if (!liveAvatarWatcherWired) {
+            liveAvatarWatcherWired = true
+            binding.editSettingsName.wireLiveInitialsPreview(binding.imgSettingsAvatar, "self") {
+                val p = storage.loadProfile().avatarPath
+                !p.isNullOrEmpty() && File(p).exists()
+            }
+        }
 
         binding.imgSettingsAvatar.setOnClickListener {
             pickAvatarLauncher.launch("image/*")
@@ -409,5 +421,97 @@ class SettingsActivity : AppCompatActivity() {
             .setPositiveButton(R.string.save) { _, _ -> onPick(Color.HSVToColor(hsv)) }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    // ---------- Nama & Ikon Aplikasi ----------
+
+    private data class AppIdentity(val aliasName: String, val labelRes: Int, val iconRes: Int, val manifestDefaultEnabled: Boolean)
+
+    private val identities = listOf(
+        AppIdentity("cloud.wumboing.rpchat.LauncherDefault", R.string.identity_default, R.mipmap.ic_launcher, true),
+        AppIdentity("cloud.wumboing.rpchat.LauncherNotes", R.string.identity_notes, R.mipmap.ic_launcher_notes, false),
+        AppIdentity("cloud.wumboing.rpchat.LauncherCalc", R.string.identity_calc, R.mipmap.ic_launcher_calc, false),
+        AppIdentity("cloud.wumboing.rpchat.LauncherWeather", R.string.identity_weather, R.mipmap.ic_launcher_weather, false)
+    )
+
+    private fun isAliasActive(identity: AppIdentity): Boolean {
+        val state = packageManager.getComponentEnabledSetting(
+            android.content.ComponentName(packageName, identity.aliasName)
+        )
+        return when (state) {
+            android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
+            android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED -> false
+            else -> identity.manifestDefaultEnabled
+        }
+    }
+
+    private fun setupAppIdentitySection() {
+        refreshIdentityRows()
+    }
+
+    private fun refreshIdentityRows() {
+        binding.identityContainer.removeAllViews()
+        val activeIdentity = identities.firstOrNull { isAliasActive(it) } ?: identities.first()
+        val scale = resources.displayMetrics.density
+
+        identities.forEach { identity ->
+            val isActive = identity.aliasName == activeIdentity.aliasName
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding((20 * scale).toInt(), (10 * scale).toInt(), (20 * scale).toInt(), (10 * scale).toInt())
+                background = if (isActive) {
+                    ThemeUtils.bubbleDrawable(this@SettingsActivity, getColorCompat(R.color.bubble_other), 12f)
+                } else null
+                isClickable = true
+                isFocusable = true
+                val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                params.bottomMargin = (6 * scale).toInt()
+                layoutParams = params
+            }
+
+            val icon = android.widget.ImageView(this).apply {
+                setImageResource(identity.iconRes)
+                layoutParams = LinearLayout.LayoutParams((40 * scale).toInt(), (40 * scale).toInt())
+            }
+            row.addView(icon)
+
+            val label = TextView(this).apply {
+                text = getString(identity.labelRes)
+                setTextColor(getColorCompat(R.color.text_primary))
+                textSize = 14f
+                val params = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                params.marginStart = (14 * scale).toInt()
+                layoutParams = params
+            }
+            row.addView(label)
+
+            if (isActive) {
+                val check = android.widget.ImageView(this).apply {
+                    setImageResource(R.drawable.ic_check)
+                    setColorFilter(getColorCompat(R.color.accent))
+                    layoutParams = LinearLayout.LayoutParams((20 * scale).toInt(), (20 * scale).toInt())
+                }
+                row.addView(check)
+            }
+
+            row.setOnClickListener {
+                identities.forEach { other ->
+                    val state = if (other.aliasName == identity.aliasName) {
+                        android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    } else {
+                        android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    }
+                    packageManager.setComponentEnabledSetting(
+                        android.content.ComponentName(packageName, other.aliasName),
+                        state,
+                        android.content.pm.PackageManager.DONT_KILL_APP
+                    )
+                }
+                refreshIdentityRows()
+            }
+
+            binding.identityContainer.addView(row)
+        }
     }
 }

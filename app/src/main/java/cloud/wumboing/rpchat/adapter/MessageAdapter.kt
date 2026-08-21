@@ -11,6 +11,7 @@ import cloud.wumboing.rpchat.data.AppSettings
 import cloud.wumboing.rpchat.data.Message
 import cloud.wumboing.rpchat.databinding.ItemDateSeparatorBinding
 import cloud.wumboing.rpchat.databinding.ItemMessageBinding
+import cloud.wumboing.rpchat.util.AvatarUtils
 import cloud.wumboing.rpchat.util.BitmapUtils
 import cloud.wumboing.rpchat.util.ChatDateUtils
 import cloud.wumboing.rpchat.util.ThemeUtils
@@ -83,11 +84,11 @@ class MessageAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val row = rows[position]) {
             is ChatRow.DateRow -> (holder as DateVH).binding.txtDateLabel.text = row.label
-            is ChatRow.MsgRow -> bindMessage((holder as MsgVH).binding, row.message)
+            is ChatRow.MsgRow -> bindMessage((holder as MsgVH).binding, row.message, position)
         }
     }
 
-    private fun bindMessage(b: ItemMessageBinding, message: Message) {
+    private fun bindMessage(b: ItemMessageBinding, message: Message, position: Int) {
         val settings = settingsProvider()
         val isPinned = message.id == pinnedIdProvider()
 
@@ -122,13 +123,11 @@ class MessageAdapter(
         val rowParams = b.contentRow.layoutParams as? android.widget.LinearLayout.LayoutParams
 
         if (message.isSelf) {
-            b.bubble.background = ThemeUtils.bubbleDrawable(b.root.context, settings.bubbleSelfColor)
             rowParams?.gravity = Gravity.END
             b.imgAvatarLeft.visibility = View.GONE
             b.imgAvatarRight.visibility = View.VISIBLE
             b.imgAvatarRight.loadAvatarOrInitials(selfAvatarProvider(), selfNameProvider(), "self")
         } else {
-            b.bubble.background = ThemeUtils.bubbleDrawable(b.root.context, settings.bubbleOtherColor)
             rowParams?.gravity = Gravity.START
             b.imgAvatarRight.visibility = View.GONE
             b.imgAvatarLeft.visibility = View.VISIBLE
@@ -138,6 +137,24 @@ class MessageAdapter(
             b.imgAvatarLeft.loadAvatarOrInitials(avatarPath, name, seed)
         }
         b.contentRow.layoutParams = rowParams
+
+        // Nama pengirim di bubble (khusus chat grup): tampil hanya saat ganti pengirim,
+        // sembunyi kalau pesan sebelumnya masih dari pengirim yang sama.
+        val showSenderName = !message.isSelf && message.senderId != null && run {
+            val prevRow = if (position > 0) rows.getOrNull(position - 1) else null
+            when (prevRow) {
+                null -> true
+                is ChatRow.DateRow -> true
+                is ChatRow.MsgRow -> prevRow.message.isSelf || prevRow.message.senderId != message.senderId
+            }
+        }
+        if (showSenderName) {
+            b.txtSenderName.visibility = View.VISIBLE
+            b.txtSenderName.text = message.senderName ?: ""
+            b.txtSenderName.setTextColor(AvatarUtils.colorFor(message.senderId ?: otherSeed))
+        } else {
+            b.txtSenderName.visibility = View.GONE
+        }
 
         if (!message.replyPreview.isNullOrEmpty()) {
             b.replyPreviewContainer.visibility = View.VISIBLE
@@ -185,7 +202,26 @@ class MessageAdapter(
                     )
                     b.txtMediaName.text = File(message.mediaPath!!).name
                 }
+                "sticker" -> {
+                    val bmp = BitmapUtils.decodeSampledFromFile(message.mediaPath!!, 500)
+                    if (bmp != null) {
+                        b.imgMessagePhoto.setImageBitmap(bmp)
+                        b.photoFrame.visibility = View.VISIBLE
+                    }
+                }
             }
+        }
+
+        // Stiker tampil tanpa bubble/latar belakang
+        if (message.mediaType == "sticker") {
+            b.bubble.background = null
+            b.bubble.setPadding(0, 0, 0, 0)
+        } else if (message.isSelf) {
+            b.bubble.background = ThemeUtils.bubbleDrawable(b.root.context, settings.bubbleSelfColor)
+            b.bubble.setPadding(dp(b, 12), dp(b, 8), dp(b, 12), dp(b, 6))
+        } else {
+            b.bubble.background = ThemeUtils.bubbleDrawable(b.root.context, settings.bubbleOtherColor)
+            b.bubble.setPadding(dp(b, 12), dp(b, 8), dp(b, 12), dp(b, 6))
         }
 
         b.contentRow.setOnClickListener {
@@ -199,6 +235,9 @@ class MessageAdapter(
     }
 
     override fun getItemCount() = rows.size
+
+    private fun dp(b: ItemMessageBinding, value: Int): Int =
+        (value * b.root.resources.displayMetrics.density).toInt()
 
     fun getMessageAtPosition(position: Int): Message? = (rows.getOrNull(position) as? ChatRow.MsgRow)?.message
 

@@ -20,6 +20,7 @@ import cloud.wumboing.rpchat.data.Storage
 import cloud.wumboing.rpchat.databinding.ActivityGroupProfileBinding
 import cloud.wumboing.rpchat.databinding.DialogAddCharacterBinding
 import cloud.wumboing.rpchat.util.clipToCircle
+import cloud.wumboing.rpchat.util.wireLiveInitialsPreview
 import java.io.File
 
 class GroupProfileActivity : AppCompatActivity() {
@@ -124,8 +125,40 @@ class GroupProfileActivity : AppCompatActivity() {
                         pendingEditMember = null
                         pickAvatarLauncher.launch("image/*")
                     }
+                    1 -> showAddMemberChooser()
+                }
+            }
+            .show()
+    }
+
+    private fun showAddMemberChooser() {
+        val options = arrayOf(getString(R.string.pick_from_contacts), getString(R.string.add_member))
+        AlertDialog.Builder(this)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showPickFromContactsDialog()
                     1 -> showAddMemberDialog()
                 }
+            }
+            .show()
+    }
+
+    private fun showPickFromContactsDialog() {
+        val existingIds = group.members.map { it.id }.toSet()
+        val available = storage.loadCharacters().filter { it.id !in existingIds }
+        if (available.isEmpty()) {
+            android.widget.Toast.makeText(this, R.string.no_contacts_available, android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        val names = available.map { it.name }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.pick_from_contacts)
+            .setItems(names) { _, which ->
+                val character = available[which]
+                val newMember = GroupMember(id = character.id, name = character.name, avatarPath = character.avatarPath)
+                group.members.add(newMember)
+                storage.updateGroup(group)
+                refreshMembersList()
             }
             .show()
     }
@@ -155,9 +188,11 @@ class GroupProfileActivity : AppCompatActivity() {
         val db = DialogAddCharacterBinding.inflate(layoutInflater)
         db.imgAvatarPreview.clipToCircle()
         memberDialogBinding = db
+        val newMemberId = java.util.UUID.randomUUID().toString()
         pendingEditMember = GroupMember(name = "") // penanda mode tambah
 
         db.editBio.visibility = View.GONE
+        db.editName.wireLiveInitialsPreview(db.imgAvatarPreview, newMemberId) { pendingMemberAvatarPath != null }
         db.imgAvatarPreview.setOnClickListener { pickAvatarLauncher.launch("image/*") }
 
         AlertDialog.Builder(this)
@@ -166,12 +201,20 @@ class GroupProfileActivity : AppCompatActivity() {
             .setPositiveButton(R.string.save) { _, _ ->
                 val name = db.editName.text.toString().trim()
                 if (name.isNotEmpty()) {
-                    val newMember = GroupMember(name = name)
+                    val newMember = GroupMember(id = newMemberId, name = name)
                     pendingMemberAvatarPath?.let { path ->
                         newMember.avatarPath = copyCroppedToInternal(path, "member_${newMember.id}")
                     }
                     group.members.add(newMember)
                     storage.updateGroup(group)
+                    // anggota baru otomatis muncul juga sebagai kontak
+                    storage.addCharacter(
+                        cloud.wumboing.rpchat.data.Character(
+                            id = newMember.id,
+                            name = newMember.name,
+                            avatarPath = newMember.avatarPath
+                        )
+                    )
                     refreshMembersList()
                     binding.txtProfileName.text = group.name
                 }
@@ -200,6 +243,9 @@ class GroupProfileActivity : AppCompatActivity() {
                 val bmp = BitmapFactory.decodeFile(path)
                 if (bmp != null) db.imgAvatarPreview.setImageBitmap(bmp)
             }
+        }
+        db.editName.wireLiveInitialsPreview(db.imgAvatarPreview, member.id) {
+            pendingMemberAvatarPath != null || (member.avatarPath != null && File(member.avatarPath!!).exists())
         }
         db.imgAvatarPreview.setOnClickListener { pickAvatarLauncher.launch("image/*") }
 

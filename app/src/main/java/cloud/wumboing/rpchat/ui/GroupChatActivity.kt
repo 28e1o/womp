@@ -40,12 +40,6 @@ class GroupChatActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_GROUP_ID = "extra_group_id"
         private val REACTIONS = listOf("👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "😡")
-        private val EMOJIS = listOf(
-            "😀", "😁", "😂", "🤣", "😊", "😍", "😘", "😜", "🤔", "😎",
-            "😢", "😭", "😡", "😱", "🥰", "🙄", "😴", "🤗", "😇", "🙃",
-            "👍", "👎", "👏", "🙏", "💪", "❤️", "💔", "🔥", "✨", "🎉",
-            "😏", "😌", "🥺", "😳", "🤯", "🥳", "😤", "😷", "🤝", "👀"
-        )
     }
 
     private data class PendingMedia(val path: String, val type: String, val displayName: String)
@@ -65,6 +59,10 @@ class GroupChatActivity : AppCompatActivity() {
     private val pickMediaLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> if (uri != null) handlePickedMedia(uri) }
+
+    private val pickStickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> if (uri != null) addSticker(uri) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,7 +115,7 @@ class GroupChatActivity : AppCompatActivity() {
         binding.btnCancelReply.setOnClickListener { clearReply() }
         binding.btnCancelAttach.setOnClickListener { clearAttachment() }
         binding.btnAttach.setOnClickListener { showAttachOptions() }
-        binding.btnEmoji.setOnClickListener { showEmojiPicker { emoji -> insertEmoji(emoji) } }
+        binding.btnEmoji.setOnClickListener { showStickerPicker() }
         binding.btnUnpin.setOnClickListener { unpinMessage() }
         binding.pinnedBar.setOnClickListener { scrollToPinnedMessage() }
         binding.btnMoreOptions.setOnClickListener { openGroupProfile() }
@@ -143,35 +141,91 @@ class GroupChatActivity : AppCompatActivity() {
         binding.btnAttach.visibility = if (hasContent) View.GONE else View.VISIBLE
     }
 
-    private fun insertEmoji(emoji: String) {
-        val start = binding.editMessage.selectionStart.coerceAtLeast(0)
-        val end = binding.editMessage.selectionEnd.coerceAtLeast(0)
-        binding.editMessage.text.replace(minOf(start, end), maxOf(start, end), emoji)
-    }
-
-    private fun showEmojiPicker(onPick: (String) -> Unit) {
+    private fun showStickerPicker() {
+        val stickers = storage.loadStickers()
+        if (stickers.isEmpty()) {
+            pickStickerLauncher.launch("image/*")
+            return
+        }
+        val scale = resources.displayMetrics.density
+        val tileSize = (72 * scale).toInt()
         val grid = GridLayout(this).apply {
-            columnCount = 8
+            columnCount = 4
             setPadding(16, 16, 16, 16)
         }
-        EMOJIS.forEach { emoji ->
-            val tv = TextView(this).apply {
-                text = emoji
-                textSize = 22f
-                gravity = Gravity.CENTER
-                setPadding(12, 12, 12, 12)
+        var dialogRef: AlertDialog? = null
+
+        stickers.forEach { file ->
+            val iv = android.widget.ImageView(this).apply {
+                val bmp = BitmapUtils.decodeSampledFromFile(file.absolutePath, 300)
+                if (bmp != null) setImageBitmap(bmp)
+                scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
                 layoutParams = GridLayout.LayoutParams().apply {
-                    width = ViewGroup.LayoutParams.WRAP_CONTENT
-                    height = ViewGroup.LayoutParams.WRAP_CONTENT
+                    width = tileSize
+                    height = tileSize
+                    setMargins(8, 8, 8, 8)
                 }
-                setOnClickListener { onPick(emoji) }
+                setOnClickListener {
+                    sendSticker(file.absolutePath)
+                    dialogRef?.dismiss()
+                }
             }
-            grid.addView(tv)
+            grid.addView(iv)
         }
-        AlertDialog.Builder(this)
-            .setView(grid)
-            .setPositiveButton(R.string.save, null)
+
+        val addTile = TextView(this).apply {
+            text = "+"
+            textSize = 28f
+            gravity = Gravity.CENTER
+            setTextColor(resources.getColor(R.color.text_secondary, theme))
+            background = cloud.wumboing.rpchat.util.ThemeUtils.bubbleDrawable(
+                this@GroupChatActivity, resources.getColor(R.color.bubble_other, theme), 12f
+            )
+            layoutParams = GridLayout.LayoutParams().apply {
+                width = tileSize
+                height = tileSize
+                setMargins(8, 8, 8, 8)
+            }
+            setOnClickListener {
+                pickStickerLauncher.launch("image/*")
+                dialogRef?.dismiss()
+            }
+        }
+        grid.addView(addTile)
+
+        val scrollView = android.widget.ScrollView(this).apply { addView(grid) }
+        dialogRef = AlertDialog.Builder(this)
+            .setView(scrollView)
             .show()
+    }
+
+    private fun addSticker(uri: Uri) {
+        try {
+            val outFile = File(storage.stickersDir, "${UUID.randomUUID()}.jpg")
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(outFile).use { output -> input.copyTo(output) }
+            }
+        } catch (e: Exception) {
+            // abaikan jika gagal
+        }
+    }
+
+    private fun sendSticker(path: String) {
+        val message = Message(
+            text = "",
+            isSelf = true,
+            mediaPath = path,
+            mediaType = "sticker",
+            replyToId = replyingTo?.id,
+            replyPreview = binding.txtReplyPreview.text?.toString()?.takeIf { replyingTo != null },
+            replyName = replyingToName
+        )
+        val messages = storage.loadMessages(group.id)
+        messages.add(message)
+        storage.saveMessages(group.id, messages)
+        adapter.addMessage(message)
+        clearReply()
+        scrollToBottom()
     }
 
     private fun applyChatBackground() {
@@ -438,6 +492,7 @@ class GroupChatActivity : AppCompatActivity() {
                 "video" -> "🎬 Video"
                 "audio" -> "🎵 Audio"
                 "document" -> "📄 Dokumen"
+            "sticker" -> "🖼️ Stiker"
                 else -> ""
             }
         }
@@ -521,6 +576,7 @@ class GroupChatActivity : AppCompatActivity() {
             "video" -> "🎬 Video"
             "audio" -> "🎵 Audio"
             "document" -> "📄 Dokumen"
+            "sticker" -> "🖼️ Stiker"
             else -> ""
         }
     }

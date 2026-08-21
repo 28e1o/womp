@@ -92,4 +92,12 @@
     <string name="choose_member">Pilih Anggota</string>
     <string name="no_members_yet">Belum ada anggota. Tambahkan lewat menu titik tiga.</string>
     <string name="edit_member">Edit Anggota</string>
+    <string name="pick_from_contacts">Pilih dari Kontak</string>
+    <string name="no_contacts_available">Semua kontak sudah jadi anggota</string>
+    <string name="settings_app_identity_section">Nama &amp; Ikon Aplikasi</string>
+    <string name="identity_default">RP Chat</string>
+    <string name="identity_notes">Catatan</string>
+    <string name="identity_calc">Kalkulator</string>
+    <string name="identity_weather">Cuaca</string>
+    <string name="app_identity_hint">Ganti tampilan ikon &amp; nama aplikasi di layar utama HP. Butuh buka ulang launcher untuk melihat perubahan.</string>
 </resources>

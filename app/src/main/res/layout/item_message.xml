@@ -73,6 +73,15 @@
                 android:paddingBottom="6dp"
                 android:layout_marginBottom="6dp">
 
+                <TextView
+                    android:id="@+id/txtSenderName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="2dp"
+                    android:textStyle="bold"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
                 <LinearLayout
                     android:id="@+id/replyPreviewContainer"
                     android:layout_width="match_parent"

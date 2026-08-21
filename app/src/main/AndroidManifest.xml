@@ -10,12 +10,63 @@
 
         <activity
             android:name=".ui.MainActivity"
+            android:exported="false" />
+
+        <activity-alias
+            android:name=".LauncherDefault"
+            android:targetActivity=".ui.MainActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:label="@string/identity_default"
+            android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherNotes"
+            android:targetActivity=".ui.MainActivity"
+            android:icon="@mipmap/ic_launcher_notes"
+            android:roundIcon="@mipmap/ic_launcher_notes_round"
+            android:label="@string/identity_notes"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherCalc"
+            android:targetActivity=".ui.MainActivity"
+            android:icon="@mipmap/ic_launcher_calc"
+            android:roundIcon="@mipmap/ic_launcher_calc_round"
+            android:label="@string/identity_calc"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherWeather"
+            android:targetActivity=".ui.MainActivity"
+            android:icon="@mipmap/ic_launcher_weather"
+            android:roundIcon="@mipmap/ic_launcher_weather_round"
+            android:label="@string/identity_weather"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <activity
             android:name=".ui.ChatActivity"
